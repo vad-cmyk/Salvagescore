@@ -146,6 +146,17 @@ export type SimilarLot = {
   url: string;
 };
 
+/** A completed Copart UK auction result — actual hammer price. */
+export type SoldLot = {
+  lotNumber: string;
+  title: string;
+  hammerGbp: number;
+  odometerMiles?: number;
+  primaryDamage: string;
+  saleDate?: string;  // ISO 8601
+  url: string;
+};
+
 /** An open NHTSA safety recall for the vehicle's make/model/year. */
 export type NhtsaRecall = {
   campaignNumber: string;
@@ -190,6 +201,7 @@ export type Report = {
   knownIssues?: KnownIssue[];
   verdictConfidence?: VerdictConfidence;
   similarLots?: SimilarLot[];
+  soldComps?: SoldLot[];
   recalls?: NhtsaRecall[];
   ownershipCosts?: OwnershipCosts;
 };
