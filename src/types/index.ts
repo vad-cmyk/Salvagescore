@@ -161,7 +161,7 @@ export type SoldLot = {
 export type ReportSummary = {
   slug: string;
   createdAt: string;
-  verdict: string;
+  verdict: ReportVerdict;
   listing: {
     year: number;
     make: string;
