@@ -157,6 +157,18 @@ export type SoldLot = {
   url: string;
 };
 
+/** Lightweight summary for the history page — no full sections payload. */
+export type ReportSummary = {
+  slug: string;
+  createdAt: string;
+  verdict: string;
+  listing: {
+    year: number;
+    make: string;
+    model: string;
+  };
+};
+
 /** An open NHTSA safety recall for the vehicle's make/model/year. */
 export type NhtsaRecall = {
   campaignNumber: string;
@@ -204,4 +216,5 @@ export type Report = {
   soldComps?: SoldLot[];
   recalls?: NhtsaRecall[];
   ownershipCosts?: OwnershipCosts;
+  userId?: string;
 };
