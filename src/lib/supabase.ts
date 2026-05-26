@@ -82,12 +82,13 @@ export async function claimReport(
   userId: string,
   client: SupabaseClient
 ): Promise<boolean> {
-  const { data } = await client
+  const { data, error } = await client
     .from('reports')
     .update({ user_id: userId })
     .eq('slug', slug)
     .is('user_id', null)
     .select('slug');
+  if (error) throw new Error(`claimReport failed: ${error.message}`);
   return Array.isArray(data) && data.length > 0;
 }
 
