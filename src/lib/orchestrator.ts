@@ -33,7 +33,7 @@ function getScraper(url: string): (url: string) => Promise<Listing> {
 }
 
 /** Run the full analysis pipeline for a given listing URL. Returns the report slug. */
-export async function runAnalysis(url: string, buyerLocation: BuyerLocation = 'uk'): Promise<{ slug: string; report: Report }> {
+export async function runAnalysis(url: string, buyerLocation: BuyerLocation = 'uk', userId?: string): Promise<{ slug: string; report: Report }> {
   // 1. Scrape
   const scrape = getScraper(url);
   const listing = await scrape(url);
@@ -87,6 +87,7 @@ export async function runAnalysis(url: string, buyerLocation: BuyerLocation = 'u
     soldComps: soldComps.length > 0 ? soldComps : undefined,
     recalls: recalls.length > 0 ? recalls : undefined,
     ownershipCosts,
+    userId: userId || undefined,
   };
 
   await saveReport(report);
