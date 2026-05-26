@@ -1058,6 +1058,57 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
           </div>
         )}
 
+        {/* Sold auction comps — UK buyers only */}
+        {!isUsBuyer && report.soldComps && report.soldComps.length > 0 && (
+          <div className="animate-fade-up stagger-5 mt-4 p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
+            <div className="flex items-center justify-between mb-4">
+              <SectionLabel>Sold Auction Comps</SectionLabel>
+              <span className="font-mono text-[0.65rem] text-[var(--text-muted)]">
+                recent completed auctions · Copart UK
+              </span>
+            </div>
+            <div className="space-y-2">
+              {report.soldComps.map((comp) => (
+                <a
+                  key={comp.lotNumber}
+                  href={comp.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-3 p-3 rounded-lg border border-[var(--border)] hover:border-[var(--text-muted)] transition-colors group"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono text-[0.8rem] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] truncate">
+                      {comp.title}
+                    </p>
+                    <p className="font-mono text-[0.65rem] text-[var(--text-muted)] mt-0.5">
+                      {comp.primaryDamage}
+                      {comp.odometerMiles
+                        ? ` · ${comp.odometerMiles.toLocaleString()} mi`
+                        : ''}
+                      {comp.saleDate
+                        ? ` · ${new Date(comp.saleDate).toLocaleDateString('en-GB', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}`
+                        : ''}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-mono text-sm font-[700] text-[var(--text-primary)]">
+                      £{comp.hammerGbp.toLocaleString()}
+                    </p>
+                    <p className="font-mono text-[0.6rem] text-[var(--text-muted)]">hammer</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+            <p className="mt-3 font-mono text-[0.6rem] text-[var(--text-muted)]">
+              Final hammer prices at time of auction · Source: Copart UK · Check lot pages for full details
+            </p>
+          </div>
+        )}
+
         {/* Bodyshop repair spec */}
         <BodyshopSpec spec={bodyshopSpec} />
 
