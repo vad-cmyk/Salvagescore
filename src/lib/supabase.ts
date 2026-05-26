@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Report } from '@/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Report, ReportSummary, Listing } from '@/types';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -31,6 +32,7 @@ export async function saveReport(report: Omit<Report, 'id' | 'createdAt'>): Prom
       ownership_costs: report.ownershipCosts ?? null,
       verdict_confidence: report.verdictConfidence ?? null,
       sold_comps: report.soldComps ?? null,
+      user_id: report.userId ?? null,
     })
     .select('slug')
     .single();
@@ -66,5 +68,46 @@ export async function getReportBySlug(slug: string): Promise<Report | null> {
     ownershipCosts: data.ownership_costs ?? undefined,
     verdictConfidence: data.verdict_confidence ?? undefined,
     soldComps: data.sold_comps ?? undefined,
+    userId: data.user_id ?? undefined,
   } as Report;
+}
+
+/**
+ * Claim an unclaimed report for a user.
+ * Must use the caller's authenticated client so the RLS policy is enforced.
+ * Returns true if the report was claimed, false if already owned.
+ */
+export async function claimReport(
+  slug: string,
+  userId: string,
+  client: SupabaseClient
+): Promise<boolean> {
+  const { data } = await client
+    .from('reports')
+    .update({ user_id: userId })
+    .eq('slug', slug)
+    .is('user_id', null)
+    .select('slug');
+  return Array.isArray(data) && data.length > 0;
+}
+
+/** Fetch all report summaries for a user, newest first. */
+export async function getReportsByUser(userId: string): Promise<ReportSummary[]> {
+  const { data, error } = await supabaseAdmin
+    .from('reports')
+    .select('slug, created_at, verdict, listing')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error || !data) return [];
+  return data.map((row) => ({
+    slug: row.slug,
+    createdAt: row.created_at,
+    verdict: row.verdict,
+    listing: {
+      year: (row.listing as Listing).year,
+      make: (row.listing as Listing).make,
+      model: (row.listing as Listing).model,
+    },
+  }));
 }
