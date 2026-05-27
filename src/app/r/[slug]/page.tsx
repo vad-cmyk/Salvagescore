@@ -9,6 +9,8 @@ import { PANEL_LABELS } from '@/lib/cost-model/defaults';
 import { generateBodyshopSpec } from '@/lib/bodyshop-spec';
 import AuctionCountdown from './AuctionCountdown';
 import UlezBadge from './UlezBadge';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import ClaimPrompt from './ClaimPrompt';
 
 export const revalidate = 0;
 
@@ -51,6 +53,10 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
   const { slug } = await params;
   const report: Report | null = await getReportBySlug(slug);
   if (!report) notFound();
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isLoggedIn = !!user;
+  const isOwned = !!user && !!report.userId && report.userId === user.id;
 
   const verdict = VERDICT_CONFIG[report.verdict];
   const { listing, damage, cost, resale, sections } = report;
@@ -153,6 +159,9 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
             </p>
           </div>
         </div>
+
+        {/* Claim prompt — save to history */}
+        <ClaimPrompt slug={slug} isLoggedIn={isLoggedIn} isOwned={isOwned} />
 
         {/* Summary */}
         <div className="animate-fade-up stagger-2 mt-6 p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
