@@ -33,6 +33,14 @@ function setApp(html) {
   document.getElementById('app').innerHTML = html;
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // ── Poll management ────────────────────────────────────────────────────────
 
 function stopPoll() {
@@ -71,7 +79,7 @@ function renderIdle(url, buyerLocation) {
   stopPoll();
   setApp(`
     <div class="state">
-      <div class="url-display">${truncateUrl(url)}</div>
+      <div class="url-display">${escapeHtml(truncateUrl(url))}</div>
       <div class="row">
         <span class="row-label">Buyer location</span>
         <div class="toggle">
@@ -138,7 +146,7 @@ function renderError(message) {
   stopPoll();
   setApp(`
     <div class="state center" style="padding:8px 0 4px">
-      <p class="error-text">${message || 'Something went wrong.'}</p>
+      <p class="error-text">${escapeHtml(message || 'Something went wrong.')}</p>
       <button id="btn-retry" class="btn-secondary">Try again</button>
     </div>
   `);
