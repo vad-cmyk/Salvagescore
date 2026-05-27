@@ -14,23 +14,31 @@ export default function ClaimReportForm() {
     setLoading(true);
     setMessage(null);
 
-    const res = await fetch('/api/claim', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: value.trim() }),
-    });
-    const data = await res.json();
+    const trimmed = value.trim();
+    const slug = trimmed.split('/').filter(Boolean).pop() ?? trimmed;
 
-    if (res.ok) {
-      setMessage({ text: 'Report added to your history.', ok: true });
-      setValue('');
-      router.refresh();
-    } else if (data.reason === 'already_owned') {
-      setMessage({ text: 'This report is already saved to an account.', ok: false });
-    } else {
-      setMessage({ text: data.error ?? 'Could not claim this report. Check the slug and try again.', ok: false });
+    try {
+      const res = await fetch('/api/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage({ text: 'Report added to your history.', ok: true });
+        setValue('');
+        router.refresh();
+      } else if (data.reason === 'already_owned') {
+        setMessage({ text: 'This report is already saved to an account.', ok: false });
+      } else {
+        setMessage({ text: data.error ?? 'Could not claim this report. Check the slug and try again.', ok: false });
+      }
+    } catch {
+      setMessage({ text: 'Network error. Please try again.', ok: false });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (

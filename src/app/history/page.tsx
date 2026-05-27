@@ -28,7 +28,7 @@ export default async function HistoryPage() {
           <h1 className="font-display text-4xl font-[700] text-[var(--text-primary)] tracking-tight mb-1">
             My Reports
           </h1>
-          <p className="font-mono text-[0.65rem] text-[var(--text-muted)]">{user.email}</p>
+          <p className="font-mono text-[0.65rem] text-[var(--text-muted)]">{user.email ?? user.id}</p>
         </div>
 
         {reports.length === 0 ? (
@@ -53,7 +53,7 @@ export default async function HistoryPage() {
                 >
                   <div>
                     <p className="font-mono text-sm text-[var(--text-primary)] group-hover:text-white transition-colors">
-                      {r.listing.year} {r.listing.make} {r.listing.model}
+                      {r.listing?.year} {r.listing?.make} {r.listing?.model}
                     </p>
                     <p className="font-mono text-[0.65rem] text-[var(--text-muted)] mt-0.5">
                       {new Date(r.createdAt).toLocaleDateString('en-GB', {
