@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CopartCheck</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 320px;
+      background: #0A0B0E;
+      color: #F0EDE8;
+      font-family: ui-monospace, 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px 10px;
+    }
+    .header img { height: 22px; width: auto; }
+    .header-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94A3B8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .divider { height: 1px; background: #1E2028; }
+
+    #app { padding: 14px 16px 16px; }
+
+    .state { display: flex; flex-direction: column; gap: 12px; }
+    .center { align-items: center; text-align: center; }
+
+    .url-display {
+      font-size: 11px;
+      color: #94A3B8;
+      word-break: break-all;
+      padding: 7px 10px;
+      background: #13151A;
+      border: 1px solid #2A2D38;
+      border-radius: 6px;
+      line-height: 1.5;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .row-label { font-size: 11px; color: #94A3B8; }
+
+    .toggle {
+      display: flex;
+      background: #13151A;
+      border: 1px solid #2A2D38;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .toggle-btn {
+      padding: 5px 14px;
+      background: transparent;
+      color: #64748B;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .toggle-btn.active { background: #D97706; color: #0A0B0E; }
+    .toggle-btn:not(.active):hover { background: #1E2028; color: #F0EDE8; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 10px;
+      background: #D97706;
+      color: #0A0B0E;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #F59E0B; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary {
+      padding: 8px 20px;
+      background: transparent;
+      color: #94A3B8;
+      border: 1px solid #2A2D38;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { border-color: #94A3B8; color: #F0EDE8; }
+
+    .muted { font-size: 11px; color: #64748B; line-height: 1.6; }
+    .title { font-size: 14px; font-weight: 700; color: #F0EDE8; }
+    .elapsed {
+      font-size: 32px;
+      font-weight: 700;
+      color: #F0EDE8;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+    .done-check { font-size: 32px; color: #22C55E; }
+    .error-text { font-size: 12px; color: #EF4444; line-height: 1.5; }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #2A2D38;
+      border-top-color: #D97706;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="../icons/icon48.png" alt="" />
+    <span class="header-title">CopartCheck</span>
+  </div>
+  <div class="divider"></div>
+  <div id="app"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
