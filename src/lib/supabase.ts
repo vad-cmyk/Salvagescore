@@ -2,15 +2,21 @@ import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Report, ReportSummary, Listing } from '@/types';
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 
 /** Browser-safe client — read-only via RLS public policy. */
-export const supabase = createClient(url, anonKey);
+export const supabase = createClient(
+  url || 'https://placeholder.supabase.co',
+  anonKey || 'placeholder-anon-key'
+);
 
 /** Server-only client — bypasses RLS for report inserts. */
-export const supabaseAdmin = createClient(url, serviceKey);
+export const supabaseAdmin = createClient(
+  url || 'https://placeholder.supabase.co',
+  serviceKey || 'placeholder-service-key'
+);
 
 /** Save a completed report and return its slug. */
 export async function saveReport(report: Omit<Report, 'id' | 'createdAt'>): Promise<string> {
