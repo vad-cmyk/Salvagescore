@@ -402,7 +402,7 @@ export function HomeMarketingSections() {
               {/* Video */}
               {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
               <video
-                src="/hero.mp4"
+                src="https://xjugdyb7ivqd1ig6.public.blob.vercel-storage.com/1779749303026-o5rcujxp1gq.mp4"
                 autoPlay
                 muted
                 loop
