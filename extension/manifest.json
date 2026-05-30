@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "CopartCheck",
+  "name": "SalvageScore",
   "version": "1.0.0",
-  "description": "One-click auction analysis for Copart and A Better Bid listings.",
-  "permissions": ["activeTab", "storage"],
-  "host_permissions": ["https://copartcheck.com/*"],
+  "description": "One-click AI analysis for salvage auction listings.",
+  "permissions": ["activeTab", "storage", "alarms"],
+  "host_permissions": ["https://salvagescore.com/*"],
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {

@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getReportsByUser } from '@/lib/supabase';
 import ClaimReportForm from './ClaimReportForm';
 
-export const metadata: Metadata = { title: 'My Reports — CopartCheck' };
+export const metadata: Metadata = { title: 'My Reports — SalvageScore' };
 
 const VERDICT_STYLE: Record<string, { label: string; color: string }> = {
   pass:    { label: 'PASS',    color: 'text-[#22C55E]' },

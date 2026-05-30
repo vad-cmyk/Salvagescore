@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 
 export const metadata: Metadata = {
-  title: 'CopartCheck — Auction Analysis for US & UK Buyers',
+  title: 'SalvageScore — Auction Analysis for US & UK Buyers',
   description:
-    'Paste a Copart or A Better Bid URL. Get AI damage analysis, full cost breakdown, and a go/no-go verdict in 90 seconds. Built for US and UK buyers.',
+    'Paste a salvage auction URL. Get AI damage analysis, full cost breakdown, and a go/no-go verdict in 90 seconds. Built for US and UK buyers.',
 };
 
 export default async function RootLayout({

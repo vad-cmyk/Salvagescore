@@ -122,7 +122,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
               <a href="/check" className="inline-flex items-center gap-3 group">
                 <div className="bg-white rounded-lg px-2 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logo.png" alt="CopartChecker" className="h-7 w-auto" />
+                  <img src="/logo.png" alt="SalvageScore" className="h-7 w-auto" />
                 </div>
                 <span className="font-mono text-xs text-white/55 group-hover:text-white/90 transition-colors">
                   ← New analysis
@@ -1194,12 +1194,12 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
           <div className="space-y-1.5 font-mono text-[0.65rem] text-[var(--text-muted)] leading-[1.7]">
             <p>This report is generated automatically using AI and publicly available data. It is provided for informational and research purposes only and does not constitute financial, legal, mechanical, or professional advice of any kind.</p>
             <p>All cost estimates (repair, import, resale, running costs) are approximations based on statistical models and market data at the time of report generation. Actual costs may differ materially. Resale values are ceiling estimates for a fully repaired vehicle and are not guaranteed.</p>
-            <p>CopartChecker accepts no liability for any loss, damage, or expense arising from reliance on this report. You should always: (1) inspect the vehicle in person or arrange a pre-purchase inspection; (2) obtain independent quotes from qualified bodyshops; (3) carry out a full HPI, Carfax, or equivalent history check; and (4) seek professional advice before committing to any purchase.</p>
+            <p>SalvageScore accepts no liability for any loss, damage, or expense arising from reliance on this report. You should always: (1) inspect the vehicle in person or arrange a pre-purchase inspection; (2) obtain independent quotes from qualified bodyshops; (3) carry out a full HPI, Carfax, or equivalent history check; and (4) seek professional advice before committing to any purchase.</p>
             <p>Auction bidding is legally binding. Once placed, bids cannot be withdrawn. Ensure you have adequate finance and a clear exit plan before bidding on any salvage vehicle.</p>
           </div>
           <div className="mt-4 flex items-center justify-between flex-wrap gap-3">
             <p className="font-mono text-[0.6rem] text-[var(--text-muted)]">
-              Report generated {new Date(report.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} · CopartChecker
+              Report generated {new Date(report.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} · SalvageScore
             </p>
             <a href="/check" className="font-mono text-[0.65rem] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">
               ← Run another analysis

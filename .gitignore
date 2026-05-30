@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# large media (host on CDN)
+*.mp4
+
+# dev screenshots
+screenshot-*.png
+
+# temp / generated files
+copartcheck@0.1.0
+next
+.playwright-mcp/
+public/Gemini_Generated_Image_*.png

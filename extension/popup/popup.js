@@ -1,4 +1,4 @@
-const STALENESS_MS = 3 * 60 * 1000; // 3 minutes
+const STALENESS_MS = 5 * 60 * 1000; // 5 minutes
 
 const SUPPORTED_PATTERNS = [
   /copart\.com\/lot\//i,
@@ -134,11 +134,18 @@ function renderDone(slug) {
       <p class="done-check">✓</p>
       <p class="title">Report ready</p>
       <button id="btn-open" class="btn-primary">Open report →</button>
+      <button id="btn-new" class="btn-secondary" style="margin-top:8px">New analysis</button>
     </div>
   `);
   document.getElementById('btn-open').addEventListener('click', () => {
-    chrome.tabs.create({ url: `https://copartcheck.com/r/${slug}` });
+    chrome.tabs.create({ url: `https://salvagescore.com/r/${slug}` });
     window.close();
+  });
+  document.getElementById('btn-new').addEventListener('click', async () => {
+    await chrome.storage.local.set({
+      analysisState: { status: 'idle', startedAt: null, slug: null, error: null },
+    });
+    init();
   });
 }
 

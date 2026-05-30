@@ -41,7 +41,10 @@ export async function scrapeListing(url: string): Promise<Listing> {
   if (!lotMatch) throw new Error(`Cannot extract lot number from URL: ${url}`);
   const lotNumber = lotMatch[1];
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--disable-blink-features=AutomationControlled'],
+  });
   const context = await browser.newContext({
     userAgent:
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -50,49 +53,59 @@ export async function scrapeListing(url: string): Promise<Listing> {
   });
   const page = await context.newPage();
 
+  // Remove webdriver fingerprint before any navigation
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+  });
+
   try {
-    // Step 1 — visit lot page. This triggers the Incapsula JS challenge, which the headless
-    // Chromium executes, sets the session cookie, and redirects back to the lot page.
+    // Step 1 — visit lot page to trigger Incapsula JS challenge and set session cookies.
     await page.goto(`https://www.copart.co.uk/lot/${lotNumber}`, {
       waitUntil: 'domcontentloaded',
       timeout: 30000,
     });
 
-    // Wait for the challenge redirect to complete and Angular to start rendering.
-    // We wait until the page title contains the lot year or a pipe separator, or 10 s max.
+    // Wait for Angular to render (title will contain year or pipe separator)
     await page
       .waitForFunction(
         () =>
           document.title.includes('|') ||
           /\b20\d{2}\b/.test(document.title) ||
           document.title.toLowerCase().includes('copart'),
-        { timeout: 10000 }
+        { timeout: 15000 }
       )
-      .catch(() => {
-        // Challenge may have taken longer — proceed anyway, cookies should still be set
-      });
+      .catch(() => {});
 
-    // Step 2 — call both JSON APIs using the browser's cookie jar (Incapsula sees legit session)
-    const [lotResp, imgResp] = await Promise.all([
-      context.request.get(`${API_BASE}/${lotNumber}`, {
-        headers: { Accept: 'application/json, text/plain, */*', Referer: 'https://www.copart.co.uk/' },
-      }),
-      context.request
-        .get(`${API_BASE}/lotImages/${lotNumber}`, {
-          headers: { Accept: 'application/json, text/plain, */*', Referer: 'https://www.copart.co.uk/' },
-        })
-        .catch(() => null),
-    ]);
+    // Step 2 — call JSON APIs from within the browser page so Incapsula sees the same
+    // fingerprint as the page visit (cookies, JS environment, headers all match).
+    type FetchResult = { ok: boolean; status: number; body: unknown };
+    const [lotResult, imgResult] = await page.evaluate(
+      async ([lotUrl, imgUrl]: [string, string]): Promise<[FetchResult, FetchResult]> => {
+        const headers = { Accept: 'application/json, text/plain, */*', Referer: 'https://www.copart.co.uk/' };
+        const [lotRes, imgRes] = await Promise.all([
+          fetch(lotUrl, { headers }),
+          fetch(imgUrl, { headers }).catch(() => null),
+        ]);
+        const lotBody = lotRes.ok ? await lotRes.json() : null;
+        const imgBody = imgRes && imgRes.ok ? await imgRes.json() : null;
+        return [
+          { ok: lotRes.ok, status: lotRes.status, body: lotBody },
+          { ok: imgRes ? imgRes.ok : false, status: imgRes ? imgRes.status : 0, body: imgBody },
+        ];
+      },
+      [
+        `${API_BASE}/${lotNumber}`,
+        `${API_BASE}/lotImages/${lotNumber}`,
+      ] as [string, string]
+    );
 
-    if (!lotResp.ok()) {
-      throw new Error(`Copart UK lot API returned ${lotResp.status()} for lot ${lotNumber}`);
+    if (!lotResult.ok) {
+      throw new Error(`Copart UK lot API returned ${lotResult.status} for lot ${lotNumber}`);
     }
 
-    const lotJson = (await lotResp.json()) as { data?: { lotDetails?: CopartUkSolrLot } };
-    const imgJson = imgResp?.ok()
-      ? ((await imgResp.json()) as {
-          data?: { imagesList?: { content?: CopartUkImageEntry[] } };
-        })
+    const lotJson = lotResult.body as { data?: { lotDetails?: CopartUkSolrLot } };
+    const imgJson = imgResult.ok
+      ? (imgResult.body as { data?: { imagesList?: { content?: CopartUkImageEntry[] } } })
       : null;
 
     const lot = lotJson.data?.lotDetails;

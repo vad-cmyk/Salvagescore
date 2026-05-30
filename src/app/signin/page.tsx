@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import SignInForm from './SignInForm';
 
-export const metadata: Metadata = { title: 'Sign in — CopartCheck' };
+export const metadata: Metadata = { title: 'Sign in — SalvageScore' };
 
 export default async function SignInPage() {
   const supabase = await createSupabaseServerClient();
