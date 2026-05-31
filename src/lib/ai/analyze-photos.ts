@@ -1,8 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { DamageFindings, PhotoAnalysis, CriticalFlags, DamageSeverity } from '@/types';
 
-const client = new Anthropic();
-
 const SEVERITY_ORDER: DamageSeverity[] = ['cosmetic', 'panel', 'structural', 'frame'];
 
 function maxSeverity(a: DamageSeverity, b: DamageSeverity): DamageSeverity {
@@ -111,6 +109,7 @@ export async function analyzePhotos(
   photos: { url: string; caption?: string }[],
   sourceUrl?: string
 ): Promise<DamageFindings> {
+  const client = new Anthropic();
   const empty: DamageFindings = {
     photos: [],
     criticalFlags: {

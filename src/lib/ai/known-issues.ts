@@ -1,8 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { KnownIssue } from '@/types';
 
-const client = new Anthropic();
-
 /**
  * Ask Claude for documented known issues on a specific make/model/year.
  * Returns an empty array for models with no notable issues or if the call fails.
@@ -12,6 +10,7 @@ export async function fetchKnownIssues(
   model: string,
   year: number
 ): Promise<KnownIssue[]> {
+  const client = new Anthropic();
   const prompt = `You are a UK automotive technician with 20 years of experience diagnosing and repairing cars.
 
 List the most important DOCUMENTED known issues for a ${year} ${make} ${model} that a buyer at salvage auction should know about. Focus on:

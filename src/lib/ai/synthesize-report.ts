@@ -8,8 +8,6 @@ import type {
   VerdictConfidence,
 } from '@/types';
 
-const client = new Anthropic();
-
 export type SynthesisOutput = {
   verdict: ReportVerdict;
   summary: string;
@@ -29,6 +27,7 @@ export async function synthesizeReport(
   cost: CostBreakdown,
   resale: ResaleEstimate
 ): Promise<SynthesisOutput> {
+  const client = new Anthropic();
   const margin = resale.ceilingGbp - cost.totalGbp;
   const marginPct = Math.round((margin / resale.ceilingGbp) * 100);
 
