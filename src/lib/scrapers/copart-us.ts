@@ -79,7 +79,11 @@ export async function scrapeListing(url: string): Promise<Listing> {
 
   const slugInfo = parseSlug(url);
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = process.env.BROWSERBASE_API_KEY
+    ? await chromium.connectOverCDP(
+        `wss://connect.browserbase.com?apiKey=${process.env.BROWSERBASE_API_KEY}`
+      )
+    : await chromium.launch({ headless: true });
   const context = await browser.newContext({
     userAgent:
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -108,40 +112,37 @@ export async function scrapeListing(url: string): Promise<Listing> {
     // Extra pause so the Angular app can fire its XHR calls
     await page.waitForTimeout(1500);
 
-    // Step 2 — call the Copart US JSON APIs with the now-authenticated cookie jar
-    const [lotResp, imgResp] = await Promise.all([
-      context.request.get(`${API_BASE}/${lotNumber}`, {
-        headers: {
-          Accept: 'application/json, text/plain, */*',
-          Referer: 'https://www.copart.com/',
-        },
-      }),
-      context.request
-        .get(`${API_BASE}/lotImages/${lotNumber}`, {
-          headers: {
-            Accept: 'application/json, text/plain, */*',
-            Referer: 'https://www.copart.com/',
-          },
-        })
-        .catch(() => null),
-    ]);
+    // Step 2 — call Copart US JSON APIs from within the browser page so the
+    // Incapsula-authenticated cookie jar is shared (same approach as Copart UK).
+    type FetchResult = { ok: boolean; status: number; body: unknown };
+    const [lotResult, imgResult] = await page.evaluate(
+      async ([lotUrl, imgUrl]: [string, string]): Promise<[FetchResult, FetchResult]> => {
+        const headers = { Accept: 'application/json, text/plain, */*', Referer: 'https://www.copart.com/' };
+        const [lotRes, imgRes] = await Promise.all([
+          fetch(lotUrl, { headers }),
+          fetch(imgUrl, { headers }).catch(() => null),
+        ]);
+        const lotBody = lotRes.ok ? await lotRes.json() : null;
+        const imgBody = imgRes && imgRes.ok ? await imgRes.json() : null;
+        return [
+          { ok: lotRes.ok, status: lotRes.status, body: lotBody },
+          { ok: imgRes ? imgRes.ok : false, status: imgRes ? imgRes.status : 0, body: imgBody },
+        ];
+      },
+      [`${API_BASE}/${lotNumber}`, `${API_BASE}/lotImages/${lotNumber}`] as [string, string]
+    );
 
-    // Parse lot details — same JSON structure as Copart UK
+    // Parse lot details
     let lot: CopartUsLot | undefined;
-    if (lotResp.ok()) {
-      const json = await lotResp.json().catch(() => null) as {
-        data?: { lotDetails?: CopartUsLot };
-        lotDetails?: CopartUsLot;
-      } | null;
+    if (lotResult.ok) {
+      const json = lotResult.body as { data?: { lotDetails?: CopartUsLot }; lotDetails?: CopartUsLot } | null;
       lot = json?.data?.lotDetails ?? (json?.lotDetails as CopartUsLot | undefined);
     }
 
     // Parse images
     let images: CopartUsImageEntry[] = [];
-    if (imgResp?.ok()) {
-      const imgJson = await imgResp.json().catch(() => null) as {
-        data?: { imagesList?: { content?: CopartUsImageEntry[] } };
-      } | null;
+    if (imgResult.ok) {
+      const imgJson = imgResult.body as { data?: { imagesList?: { content?: CopartUsImageEntry[] } } } | null;
       images = imgJson?.data?.imagesList?.content ?? [];
     }
 
