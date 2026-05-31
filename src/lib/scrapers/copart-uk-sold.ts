@@ -21,7 +21,11 @@ export async function fetchSoldComps(
   model: string,
   currentLotNumber: string
 ): Promise<SoldLot[]> {
-  const browser = await chromium.launch({ headless: true });
+  const browser = process.env.BROWSERBASE_API_KEY
+    ? await chromium.connectOverCDP(
+        `wss://connect.browserbase.com?apiKey=${process.env.BROWSERBASE_API_KEY}`
+      )
+    : await chromium.launch({ headless: true });
   const context = await browser.newContext({
     userAgent:
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
