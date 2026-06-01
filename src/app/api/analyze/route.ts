@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { runAnalysis } from '@/lib/orchestrator';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {

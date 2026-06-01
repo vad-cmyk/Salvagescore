@@ -61,16 +61,13 @@ export async function runAnalysis(url: string, buyerLocation: BuyerLocation = 'u
   const cost = buildCostBreakdown({ listing, damage, exchangeRate: rate, exchangeRateDate: date });
   const ownershipCosts = estimateOwnershipCosts(listing, resale.ceilingGbp);
 
-  // 4. AI synthesis first, then optional Browserbase comps sequentially to avoid
-  // concurrent session limits on Browserbase free tier.
+  // 4. AI synthesis. UK comps (fetchSimilarLots / fetchSoldComps) are disabled:
+  // they each require a sequential Browserbase session (~20s each) which pushes
+  // the total pipeline past Vercel Hobby's 60s function limit.
   const synthesis = await synthesizeReport(listing, damage, cost, resale);
 
-  const similarLots = isUkSource
-    ? await fetchSimilarLots(listing.make, listing.model, listing.lotNumber).catch(() => [])
-    : [];
-  const soldComps = isUkSource
-    ? await fetchSoldComps(listing.make, listing.model, listing.lotNumber).catch(() => [])
-    : [];
+  const similarLots: never[] = [];
+  const soldComps: never[] = [];
 
   // 5. Persist
   const slug = nanoid(10);
