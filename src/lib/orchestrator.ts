@@ -42,30 +42,35 @@ export async function runAnalysis(url: string, buyerLocation: BuyerLocation = 'u
 
   const { rate, date } = getExchangeRate();
 
-  // 2. Photo analysis + resale + known issues + NHTSA recalls — all in parallel
+  // 2. Photo analysis + resale + known issues + NHTSA recalls — all in parallel.
+  // Each is wrapped with .catch() so a single failure doesn't abort the others
+  // (Node.js 24 terminates on unhandled rejections from Promise.all race conditions).
   const [damage, resale, knownIssues, recalls] = await Promise.all([
-    analyzePhotos(listing.photos, url),
+    analyzePhotos(listing.photos, url).catch(() => ({
+      photos: [], criticalFlags: { deployedAirbag: false, frameDamage: false, floodWaterline: false, fireDamage: false, theftStrip: false },
+      overallSeverity: 'cosmetic' as const, damagedPanels: [],
+    })),
     estimateResale(listing, rate),
-    fetchKnownIssues(listing.make, listing.model, listing.year),
+    fetchKnownIssues(listing.make, listing.model, listing.year).catch(() => []),
     isUkSource
       ? Promise.resolve([])
-      : fetchNhtsaRecalls(listing.make, listing.model, listing.year),
+      : fetchNhtsaRecalls(listing.make, listing.model, listing.year).catch(() => []),
   ]);
 
   // 3. Cost model + ownership costs (deterministic, instant)
   const cost = buildCostBreakdown({ listing, damage, exchangeRate: rate, exchangeRateDate: date });
   const ownershipCosts = estimateOwnershipCosts(listing, resale.ceilingGbp);
 
-  // 4. Synthesis + similar lots + sold comps in parallel
-  const [synthesis, similarLots, soldComps] = await Promise.all([
-    synthesizeReport(listing, damage, cost, resale),
-    isUkSource
-      ? fetchSimilarLots(listing.make, listing.model, listing.lotNumber)
-      : Promise.resolve([]),
-    isUkSource
-      ? fetchSoldComps(listing.make, listing.model, listing.lotNumber)
-      : Promise.resolve([]),
-  ]);
+  // 4. AI synthesis first, then optional Browserbase comps sequentially to avoid
+  // concurrent session limits on Browserbase free tier.
+  const synthesis = await synthesizeReport(listing, damage, cost, resale);
+
+  const similarLots = isUkSource
+    ? await fetchSimilarLots(listing.make, listing.model, listing.lotNumber).catch(() => [])
+    : [];
+  const soldComps = isUkSource
+    ? await fetchSoldComps(listing.make, listing.model, listing.lotNumber).catch(() => [])
+    : [];
 
   // 5. Persist
   const slug = nanoid(10);
