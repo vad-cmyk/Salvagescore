@@ -23,6 +23,7 @@ async function fetchImageBlock(
   try {
     const res = await fetch(url, {
       headers: { Referer: referer, 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
     const buffer = await res.arrayBuffer();
@@ -104,7 +105,7 @@ Rules:
 
 Return ONLY the JSON array, no explanation, no markdown.`;
 
-/** Analyze up to 12 listing photos and return structured damage findings. */
+/** Analyze up to 6 listing photos and return structured damage findings. */
 export async function analyzePhotos(
   photos: { url: string; caption?: string }[],
   sourceUrl?: string
@@ -126,7 +127,7 @@ export async function analyzePhotos(
   if (!photos.length) return empty;
 
   const referer = sourceUrl ?? 'https://abetter.bid/';
-  const batch = photos.slice(0, 12);
+  const batch = photos.slice(0, 6);
 
   const results = await Promise.all(batch.map((p) => fetchImageBlock(p.url, referer)));
   const validPairs = batch
@@ -139,8 +140,8 @@ export async function analyzePhotos(
   }
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 3000,
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1500,
     messages: [
       {
         role: 'user',
