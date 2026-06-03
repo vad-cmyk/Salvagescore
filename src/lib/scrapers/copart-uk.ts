@@ -64,9 +64,10 @@ export async function scrapeListing(url: string): Promise<Listing> {
 
   try {
     // Step 1 — visit lot page to trigger Incapsula JS challenge and set session cookies.
+    // 15s is enough for the challenge; cutting from 30s saves budget inside the 60s Vercel limit.
     await page.goto(`https://www.copart.co.uk/lot/${lotNumber}`, {
       waitUntil: 'domcontentloaded',
-      timeout: 30000,
+      timeout: 15000,
     });
 
     // Wait for Angular to render (title will contain year or pipe separator)
@@ -76,7 +77,7 @@ export async function scrapeListing(url: string): Promise<Listing> {
           document.title.includes('|') ||
           /\b20\d{2}\b/.test(document.title) ||
           document.title.toLowerCase().includes('copart'),
-        { timeout: 15000 }
+        { timeout: 8000 }
       )
       .catch(() => {});
 
@@ -86,9 +87,11 @@ export async function scrapeListing(url: string): Promise<Listing> {
     const [lotResult, imgResult] = await page.evaluate(
       async ([lotUrl, imgUrl]: [string, string]): Promise<[FetchResult, FetchResult]> => {
         const headers = { Accept: 'application/json, text/plain, */*', Referer: 'https://www.copart.co.uk/' };
+        // 8s AbortSignal — prevents hanging fetches from consuming Vercel function budget
+        const signal = AbortSignal.timeout(8000);
         const [lotRes, imgRes] = await Promise.all([
-          fetch(lotUrl, { headers }),
-          fetch(imgUrl, { headers }).catch(() => null),
+          fetch(lotUrl, { headers, signal }),
+          fetch(imgUrl, { headers, signal }).catch(() => null),
         ]);
         const lotBody = lotRes.ok ? await lotRes.json() : null;
         const imgBody = imgRes && imgRes.ok ? await imgRes.json() : null;
