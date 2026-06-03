@@ -143,8 +143,11 @@ export async function estimateResale(listing: Listing, exchangeRate = 1.27): Pro
     };
   }
 
-  // For non-UK lots: try AutoTrader live prices
-  const live = await fetchAutotraderMedian(listing.make, listing.model, listing.year);
+  // For non-UK lots: try AutoTrader live prices (8s timeout — Vercel Hobby limit is 60s total)
+  const live = await Promise.race([
+    fetchAutotraderMedian(listing.make, listing.model, listing.year),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+  ]);
 
   if (live) {
     const { value, penalties } = applyPenalties(live.medianGbp, listing, category, isUkSource);
