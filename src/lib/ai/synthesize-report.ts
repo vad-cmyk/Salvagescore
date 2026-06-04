@@ -25,7 +25,8 @@ export async function synthesizeReport(
   listing: Listing,
   damage: DamageFindings,
   cost: CostBreakdown,
-  resale: ResaleEstimate
+  resale: ResaleEstimate,
+  isNonRunner = false
 ): Promise<SynthesisOutput> {
   const client = new Anthropic();
   const margin = resale.ceilingGbp - cost.totalGbp;
@@ -33,11 +34,15 @@ export async function synthesizeReport(
 
   const isCleanTitle = /clean/i.test(listing.titleStatus || '');
   const isNoDamage = /^(none|n\/a|clean|no damage)/i.test((listing.primaryDamage || '').trim());
-  const cleanTitleNote = isCleanTitle && isNoDamage
+  const cleanTitleNote = isCleanTitle && isNoDamage && !isNonRunner
     ? '\n\nIMPORTANT: This is a CLEAN-TITLE vehicle with no declared damage. It may be at auction for financial reasons, fleet disposal, or insurance buyback — not necessarily because it is damaged. Treat it as a straightforward import opportunity and focus your analysis on import costs, UK market viability, and value vs. cost.\n'
     : '';
 
-  const prompt = `You are a UK vehicle importer advising a buyer on a car from Copart.${cleanTitleNote}
+  const nonRunnerNote = isNonRunner
+    ? '\n\nCRITICAL — NON-RUNNER: This vehicle does not start or cannot be driven. The photo analysis reflects body condition only and CANNOT assess the mechanical failure. The repair cost shown does NOT include drivetrain/mechanical repair — that cost is unknown and could range from £200 (dead battery) to £15,000+ (seized engine or HV battery replacement). You MUST:\n1. Treat the repair estimate as incomplete — add a realistic mechanical contingency\n2. Default to "caution" unless the margin is so large it works even at worst-case mechanical cost\n3. Explicitly state in every section that this is a non-runner and mechanical inspection is required before bidding\n4. Your summary MUST start with "NON-RUNNER — " to flag this immediately\n'
+    : '';
+
+  const prompt = `You are a UK vehicle importer advising a buyer on a car from Copart.${cleanTitleNote}${nonRunnerNote}
 
 Here is the structured data for this lot:
 
@@ -89,9 +94,9 @@ Confidence scoring guide:
 - limitingFactors: only list factors that actually apply — omit ones that don't reduce confidence
 
 Verdict guide:
-- pass: margin ≥ 15% AND no frame damage AND no fire/flood AND total cost is realistic
-- caution: margin 5–14% OR one significant risk factor (airbag, structural, high mileage) OR clean-title vehicle with thin UK resale market
-- avoid: margin < 5% OR frame damage OR flood/fire OR theft strip OR total cost exceeds resale ceiling
+- pass: margin ≥ 15% AND no frame damage AND no fire/flood AND total cost is realistic; non-runners require margin ≥ 35% to earn pass
+- caution: margin 5–14% OR one significant risk factor (airbag, structural, high mileage) OR clean-title vehicle with thin UK resale market; default for non-runners with margin 15–34%
+- avoid: margin < 5% OR frame damage OR flood/fire OR theft strip OR total cost exceeds resale ceiling; non-runners with margin < 15% should be avoid
 
 Be honest. A "pass" should feel earned. Return ONLY the JSON object.`;
 

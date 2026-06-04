@@ -78,6 +78,21 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
   const marginPct = Math.round((margin / effectiveCeilingGbp) * 100);
 
   const dealScore = computeDealScore(marginPct, damage, resale.confidence);
+  const isNonRunner = damage.criticalFlags.nonRunner === true;
+
+  // Mechanical scenario cost range (best / worst across all scenarios)
+  const mechScenarios = report.mechanicalScenarios ?? [];
+  const mechBestGbp  = mechScenarios.length > 0 ? Math.min(...mechScenarios.map((s) => s.costGbp.min)) : null;
+  const mechWorstGbp = mechScenarios.length > 0 ? Math.max(...mechScenarios.map((s) => s.costGbp.max)) : null;
+  // Probability-weighted expected cost
+  const probWeights: Record<string, number> = { high: 3, medium: 2, low: 1 };
+  const mechExpectedGbp = mechScenarios.length > 0
+    ? Math.round(
+        mechScenarios.reduce((sum, s) => sum + ((s.costGbp.min + s.costGbp.max) / 2) * probWeights[s.probability], 0) /
+        mechScenarios.reduce((sum, s) => sum + probWeights[s.probability], 0)
+      )
+    : null;
+
   const insuranceInfo = getInsuranceInfo(listing.titleStatus, listing.source);
   const heroPhoto = listing.photos[0]?.url;
   const bodyshopSpec = generateBodyshopSpec(listing, damage, cost);
@@ -186,6 +201,31 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
             All costs are estimates. Always inspect the vehicle in person, obtain independent bodyshop quotes, and carry out a full history check before bidding. This report does not constitute financial, legal, or professional advice.
           </p>
         </div>
+
+        {/* NON-RUNNER critical warning */}
+        {isNonRunner && (
+          <div className="animate-fade-up stagger-2 mt-3 rounded-xl border-2 border-[#F97316]/50 bg-[rgba(249,115,22,0.07)] overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-[rgba(249,115,22,0.15)] border-b border-[#F97316]/30">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1.5l5.5 10h-11L7 1.5z" stroke="#F97316" strokeWidth="1.3" strokeLinejoin="round"/>
+                <path d="M7 5.5v2.5M7 9.5v.5" stroke="#F97316" strokeWidth="1.3" strokeLinecap="round"/>
+              </svg>
+              <p className="font-mono text-xs font-[700] text-[#F97316] uppercase tracking-widest">Non-Runner — Mechanical cause unknown</p>
+            </div>
+            <div className="px-4 py-3 space-y-2">
+              <p className="font-mono text-[0.75rem] text-[var(--text-secondary)] leading-[1.7]">
+                This vehicle <strong className="text-[#F97316]">does not start or cannot be driven</strong>. The damage analysis above reflects visible body condition only — it cannot assess any mechanical failure.
+              </p>
+              <p className="font-mono text-[0.75rem] text-[var(--text-muted)] leading-[1.7]">
+                The repair estimate in this report <strong>does not include drivetrain costs</strong>.
+                {mechBestGbp !== null && mechWorstGbp !== null && (
+                  <> Mechanical repair could add anywhere from <strong className="text-[#22C55E]">{fmt(mechBestGbp)}</strong> (simple fix) to <strong className="text-[#EF4444]">{fmt(mechWorstGbp)}+</strong> (engine/HV battery). See the scenario breakdown below.</>
+                )}
+                {' '}A pre-purchase diagnostic inspection is essential before bidding.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Vehicle History Checks */}
         <div className="animate-fade-up stagger-2 mt-4 p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
@@ -829,6 +869,74 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
           </div>
         )}
 
+        {/* Mechanical failure scenarios */}
+        {isNonRunner && mechScenarios.length > 0 && (
+          <div className="animate-fade-up stagger-5 mt-4 p-5 rounded-xl border border-[rgba(249,115,22,0.35)] bg-[rgba(249,115,22,0.04)]">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0">
+                  <circle cx="7" cy="7" r="6" stroke="#F97316" strokeWidth="1.3"/>
+                  <path d="M5 5c.3-1 1.2-1.5 2-1.5s1.7.5 1.7 1.5c0 1-1 1.5-1.7 1.8V8.5" stroke="#F97316" strokeWidth="1.3" strokeLinecap="round"/>
+                  <circle cx="7" cy="10.5" r=".7" fill="#F97316"/>
+                </svg>
+                <SectionLabel>Mechanical Failure Scenarios</SectionLabel>
+              </div>
+              <span className="font-mono text-[0.65rem] text-[#F97316]/80 border border-[#F97316]/25 bg-[rgba(249,115,22,0.06)] rounded px-2 py-0.5">Non-runner — repair cost unknown</span>
+            </div>
+
+            {/* Cost summary boxes */}
+            {mechBestGbp !== null && mechWorstGbp !== null && mechExpectedGbp !== null && (
+              <div className="grid grid-cols-3 gap-3 mb-5">
+                <div className="p-3 rounded-lg border border-[#22C55E]/25 bg-[rgba(34,197,94,0.05)]">
+                  <p className="font-mono text-[0.6rem] text-[var(--text-muted)] uppercase tracking-wider mb-1">Best case</p>
+                  <p className="font-mono text-lg font-[700] leading-none text-[#22C55E]">£{mechBestGbp.toLocaleString()}</p>
+                  <p className="font-mono text-[0.6rem] text-[var(--text-muted)] mt-1">Simple fix (e.g. battery)</p>
+                </div>
+                <div className="p-3 rounded-lg border border-[#F97316]/25 bg-[rgba(249,115,22,0.06)]">
+                  <p className="font-mono text-[0.6rem] text-[var(--text-muted)] uppercase tracking-wider mb-1">Expected</p>
+                  <p className="font-mono text-lg font-[700] leading-none text-[#F97316]">£{mechExpectedGbp.toLocaleString()}</p>
+                  <p className="font-mono text-[0.6rem] text-[var(--text-muted)] mt-1">Probability-weighted</p>
+                </div>
+                <div className="p-3 rounded-lg border border-[#EF4444]/25 bg-[rgba(239,68,68,0.05)]">
+                  <p className="font-mono text-[0.6rem] text-[var(--text-muted)] uppercase tracking-wider mb-1">Worst case</p>
+                  <p className="font-mono text-lg font-[700] leading-none text-[#EF4444]">£{mechWorstGbp.toLocaleString()}</p>
+                  <p className="font-mono text-[0.6rem] text-[var(--text-muted)] mt-1">e.g. engine / HV battery</p>
+                </div>
+              </div>
+            )}
+
+            {/* Per-scenario list */}
+            <div className="space-y-2.5">
+              {mechScenarios.map((s, i) => {
+                const probColor = s.probability === 'high'
+                  ? 'text-[#EF4444] border-[#EF4444]/30 bg-[rgba(239,68,68,0.07)]'
+                  : s.probability === 'medium'
+                  ? 'text-[#F97316] border-[#F97316]/30 bg-[rgba(249,115,22,0.07)]'
+                  : 'text-[#EAB308] border-[#EAB308]/30 bg-[rgba(234,179,8,0.07)]';
+                return (
+                  <div key={i} className="p-3 rounded-lg border border-[rgba(249,115,22,0.2)] bg-[var(--bg-surface)]">
+                    <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`font-mono text-[0.6rem] font-[700] uppercase tracking-wide px-1.5 py-0.5 rounded border ${probColor}`}>
+                          {s.probability}
+                        </span>
+                        <p className="font-mono text-[0.8rem] font-[600] text-[var(--text-primary)]">{s.cause}</p>
+                      </div>
+                      <span className="font-mono text-[0.7rem] text-[var(--text-muted)] shrink-0 tabular-nums">
+                        £{s.costGbp.min.toLocaleString()}–£{s.costGbp.max.toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="font-mono text-[0.72rem] text-[var(--text-secondary)] leading-[1.5]">{s.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-3 font-mono text-[0.6rem] text-[var(--text-muted)]">
+              Costs = diagnosis + parts + labour at a UK independent garage · Get a pre-bid diagnostic inspection — the actual cause is unknown until assessed
+            </p>
+          </div>
+        )}
+
         {/* NHTSA open recalls */}
         {report.recalls && report.recalls.length > 0 && (
           <div className="animate-fade-up stagger-5 mt-4 p-5 rounded-xl border border-[#EF4444]/30 bg-[rgba(239,68,68,0.04)]">
@@ -1222,6 +1330,8 @@ function computeDealScore(marginPct: number, damage: DamageFindings, confidence:
   else if (damage.overallSeverity === 'frame') score -= 20;
   const flagCount = Object.values(damage.criticalFlags).filter(Boolean).length;
   score -= flagCount * 10;
+  // Non-runner carries unknown mechanical cost — additional penalty on top of the flag hit above
+  if (damage.criticalFlags.nonRunner) score -= 20;
   if (confidence === 'high') score += 5;
   else if (confidence === 'low') score -= 10;
   return Math.round(Math.min(100, Math.max(0, score)));

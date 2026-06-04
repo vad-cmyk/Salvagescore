@@ -119,6 +119,7 @@ export async function analyzePhotos(
       floodWaterline: false,
       fireDamage: false,
       theftStrip: false,
+      nonRunner: false,
     },
     overallSeverity: 'cosmetic',
     damagedPanels: [],
@@ -185,6 +186,7 @@ export async function analyzePhotos(
     floodWaterline: parsed.some((p) => p?.criticalFlags?.floodWaterline === true),
     fireDamage:     parsed.some((p) => p?.criticalFlags?.fireDamage === true),
     theftStrip:     parsed.some((p) => p?.criticalFlags?.theftStrip === true),
+    nonRunner:      false,  // Set by orchestrator from listing data, not photo analysis
   };
 
   const overallSeverity = photoResults.reduce<DamageSeverity>(

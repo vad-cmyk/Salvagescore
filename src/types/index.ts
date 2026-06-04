@@ -46,6 +46,16 @@ export type CriticalFlags = {
   floodWaterline: boolean;
   fireDamage: boolean;
   theftStrip: boolean;
+  /** Set by orchestrator from listing data — photos cannot detect mechanical failure. */
+  nonRunner?: boolean;
+};
+
+/** One probable cause of non-runner status, with best/worst repair cost in GBP. */
+export type MechanicalScenario = {
+  cause: string;
+  probability: 'high' | 'medium' | 'low';
+  description: string;
+  costGbp: { min: number; max: number };
 };
 
 export type DamageFindings = {
@@ -211,6 +221,7 @@ export type Report = {
     verdictRationale: string;
   };
   knownIssues?: KnownIssue[];
+  mechanicalScenarios?: MechanicalScenario[];
   verdictConfidence?: VerdictConfidence;
   similarLots?: SimilarLot[];
   soldComps?: SoldLot[];
