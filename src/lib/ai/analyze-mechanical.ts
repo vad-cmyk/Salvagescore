@@ -76,8 +76,11 @@ const NON_RUNNER_PATTERNS = [
   'mechanical loss',
 ];
 
-/** Detect whether a listing is a non-runner from the damage/title text. */
+/** Detect whether a listing is a non-runner from the damage/title text or driveStatus flag. */
 export function detectNonRunner(listing: Listing): boolean {
+  // Copart UK sets driveStatus=false when the vehicle cannot start or be driven
+  if (listing.driveStatus === false) return true;
+
   const text = [
     listing.primaryDamage,
     listing.secondaryDamage ?? '',

@@ -16,6 +16,8 @@ type CopartUkSolrLot = {
   td: string;      // title description
   yn: string;      // yard / location
   sad?: number;    // sale/auction date — Unix timestamp in milliseconds
+  driveStatus?: boolean;  // false = does not start / cannot be driven
+  lic?: string[];  // lot indicator codes — 'IV' = immobile vehicle
   lotNumberStr: string;
   dynamicLotDetails?: { currentBid: number };
 };
@@ -156,6 +158,9 @@ export async function scrapeListing(url: string): Promise<Listing> {
 
     const currentBid = lot.dynamicLotDetails?.currentBid ?? lot.hb;
 
+    // driveStatus=false or lic contains 'IV' (Immobile Vehicle) = non-runner
+    const isImmobile = lot.driveStatus === false || (Array.isArray(lot.lic) && lot.lic.includes('IV'));
+
     return {
       source: 'copart-uk',
       lotNumber,
@@ -173,6 +178,7 @@ export async function scrapeListing(url: string): Promise<Listing> {
       photos,
       location: lot.yn || 'UK',
       auctionDate: lot.sad ? new Date(lot.sad).toISOString() : undefined,
+      driveStatus: isImmobile ? false : true,
     };
   } finally {
     await browser.close();

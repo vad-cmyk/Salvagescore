@@ -20,6 +20,8 @@ export type Listing = {
   history?: { accidents?: number; previousSales?: number; recalls?: number };
   location: string;
   auctionDate?: string;
+  /** Copart UK only: false = vehicle does not start or cannot be driven. */
+  driveStatus?: boolean;
 };
 
 export type DamageZone =

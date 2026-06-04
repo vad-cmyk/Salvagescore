@@ -899,8 +899,8 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                 </div>
                 <div className="p-3 rounded-lg border border-[#EF4444]/25 bg-[rgba(239,68,68,0.05)]">
                   <p className="font-mono text-[0.6rem] text-[var(--text-muted)] uppercase tracking-wider mb-1">Worst case</p>
-                  <p className="font-mono text-lg font-[700] leading-none text-[#EF4444]">£{mechWorstGbp.toLocaleString()}</p>
-                  <p className="font-mono text-[0.6rem] text-[var(--text-muted)] mt-1">e.g. engine / HV battery</p>
+                  <p className="font-mono text-lg font-[700] leading-none text-[#EF4444]">£{mechWorstGbp.toLocaleString()}<span className="text-sm">+</span></p>
+                  <p className="font-mono text-[0.6rem] text-[var(--text-muted)] mt-1">Engine / HV battery — could exceed this</p>
                 </div>
               </div>
             )}
@@ -932,7 +932,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
               })}
             </div>
             <p className="mt-3 font-mono text-[0.6rem] text-[var(--text-muted)]">
-              Costs = diagnosis + parts + labour at a UK independent garage · Get a pre-bid diagnostic inspection — the actual cause is unknown until assessed
+              Costs = diagnosis + parts + labour at a UK independent garage · These are scenarios, not guarantees — actual cost is unknown until the vehicle is inspected · Major drivetrain failures (engine, HV battery, gearbox) can easily exceed the worst-case figure · Do not bid without a pre-purchase diagnostic inspection
             </p>
           </div>
         )}
