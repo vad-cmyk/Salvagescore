@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 
 // ── Scroll reveal hook ─────────────────────────────────────────────────────
 function useReveal() {
@@ -90,10 +91,9 @@ const FEATURES = [
     preview: (
       <div className="space-y-1">
         {[
-          { l: 'Hammer price', v: '$4,800' },
-          { l: 'Buyer fee (~12%)', v: '$580' },
-          { l: 'Repair estimate', v: '$2,650' },
-          { l: 'Import + duty (UK)', v: '+£1,900' },
+          { l: 'Hammer price', v: '£3,200' },
+          { l: 'Buyer fee (~12%)', v: '£380' },
+          { l: 'Repair estimate', v: '£1,620' },
         ].map((r) => (
           <div key={r.l} className="flex justify-between">
             <span className="font-mono text-[0.6rem] text-[#5A6080]">{r.l}</span>
@@ -101,8 +101,8 @@ const FEATURES = [
           </div>
         ))}
         <div className="pt-1 border-t border-[#2A2D38] flex justify-between">
-          <span className="font-mono text-[0.6rem] text-[#9BA3C2] font-[600]">US total</span>
-          <span className="font-mono text-[0.6rem] text-[#F0EDE8] font-[600]">$8,030</span>
+          <span className="font-mono text-[0.6rem] text-[#9BA3C2] font-[600]">UK total</span>
+          <span className="font-mono text-[0.6rem] text-[#F0EDE8] font-[600]">£5,200</span>
         </div>
       </div>
     ),
@@ -178,7 +178,7 @@ const FEATURES = [
     ),
     category: 'Intelligence',
     title: 'Known Issues',
-    desc: "AI-curated list of documented reliability problems specific to the make, model, and year.",
+    desc: "AI-suggested list of likely reliability problems for this make, model, and year. Verify with a specialist before bidding.",
     preview: (
       <div className="space-y-1">
         {[
@@ -278,8 +278,8 @@ const FAQ: { q: string; a: string }[] = [
     a: 'Typically 60–120 seconds. Listings with many photos or flood/fire damage take longer as the AI does more work. Don\'t close the tab while it runs.',
   },
   {
-    q: 'Does it work for both US domestic buyers and UK importers?',
-    a: 'Yes. Select your buyer type before running the analysis. US buyers get a domestic cost breakdown (hammer + buyer fee + repair), Copart estimated retail value, NHTSA recall data, US running costs, and a US-specific timeline. UK importers get the full landed cost including ocean freight, 6.5% import duty, 20% VAT, IVA compliance, CAP Clean resale, and AutoTrader comparables.',
+    q: 'Which buyer types does it support?',
+    a: 'Select your buyer type before running the analysis. US buyers get a domestic cost breakdown (hammer + buyer fee + repair), Copart estimated retail value, NHTSA recall data, US running costs, and a US-specific timeline. UK importers get the full landed cost including ocean freight, 6.5% import duty, 20% VAT, IVA compliance, CAP Clean resale, and AutoTrader comparables. UK domestic buyers get a GBP-only breakdown against UK resale benchmarks.',
   },
   {
     q: 'What is the Deal Score?',
@@ -288,6 +288,26 @@ const FAQ: { q: string; a: string }[] = [
   {
     q: 'Is this financial advice?',
     a: 'No. This is an AI-generated analysis tool for research purposes. All figures are estimates. Auction bids are legally binding. Always inspect in person, get professional quotes, and carry out an HPI check before committing to any purchase.',
+  },
+  {
+    q: 'What does it cost?',
+    a: 'Free right now — no card required, no paywall. We\'re in early launch mode and want to prove the tool is genuinely useful before adding a subscription. Enjoy it while it lasts.',
+  },
+  {
+    q: 'How is this different from a history check?',
+    a: 'An HPI or Carfax check tells you about the car\'s past — finance, theft, write-offs. SalvageScore tells you about its future — what the repairs will cost, what the car is worth once fixed, and whether the numbers make sense at today\'s bid price. You still need both.',
+  },
+  {
+    q: 'What if the analysis is wrong?',
+    a: 'AI estimates carry margins of error. Repair costs can vary ±30% depending on your region and bodyshop. Treat everything as a research starting point — not a final figure. Always get an independent inspection and at least two bodyshop quotes before placing a bid.',
+  },
+  {
+    q: 'Do you store my data?',
+    a: 'We store your email address to give you account access and to keep your report history. We don\'t sell data or share it with third parties. You can delete your account and all associated data at any time. We comply with GDPR.',
+  },
+  {
+    q: 'Can I use this for IAAI or Manheim?',
+    a: 'IAAI listings appear on A Better Bid, so those work — paste the A Better Bid URL. Direct IAAI and Manheim URLs aren\'t supported yet, but they\'re on the roadmap.',
   },
 ];
 
@@ -370,13 +390,13 @@ export function HomeMarketingSections() {
               Should you buy it?
             </h1>
             <p className="font-mono text-[0.9rem] text-[var(--text-secondary)] leading-[1.8] mb-8">
-              Paste a Copart or A Better Bid lot URL. AI scans the damage photos, models every cost, and gives you a full go&nbsp;/&nbsp;no-go report in about 90 seconds — whether you&apos;re buying in the US or importing to the UK.
+              Paste a Copart UK, Copart US, or A Better Bid lot URL. AI scans the damage photos, models every cost, and gives you a full go&nbsp;/&nbsp;no-go report in about 90 seconds — for UK Cat&nbsp;N/S buyers, UK importers, and US domestic buyers alike.
             </p>
             <a
               href="/check"
               className="inline-flex items-center gap-3 px-7 py-4 rounded-xl bg-[var(--amber)] text-[#0A0B0E] font-display font-[700] text-lg uppercase tracking-[0.08em] hover:opacity-90 active:opacity-80 transition-opacity shadow-[0_8px_24px_rgba(217,119,6,0.3)]"
             >
-              Analyse a lot
+              Get a free report
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M4 9h10M10 5l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -478,9 +498,6 @@ export function HomeMarketingSections() {
                   {step.n}
                 </span>
                 <div className="relative">
-                  <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[var(--amber)]/30 bg-[rgba(217,119,6,0.08)] mb-5">
-                    <span className="font-mono text-xs text-[var(--amber)] font-[600]">{i + 1}</span>
-                  </div>
                   <h3 className="font-display font-[700] text-xl leading-tight mb-3">{step.title}</h3>
                   <p className="font-mono text-[0.75rem] text-[var(--text-muted)] leading-[1.7] mb-4">{step.desc}</p>
                   <p className="font-mono text-[0.65rem] text-[var(--amber)]/70 border border-[var(--amber)]/20 bg-[rgba(217,119,6,0.05)] rounded px-3 py-2 leading-[1.5]">
@@ -513,6 +530,12 @@ export function HomeMarketingSections() {
                 <span className="px-3 py-1.5 rounded-lg border border-[#22C55E]/30 text-[#22C55E] bg-[rgba(34,197,94,0.06)]">+$7,470 margin</span>
                 <span className="px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text-muted)]">Score 71/100</span>
               </div>
+              <Link
+                href="/sample"
+                className="mt-5 inline-flex items-center gap-2 font-mono text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                See full sample reports →
+              </Link>
             </div>
 
             <div className="shrink-0 flex items-center gap-4">
@@ -582,13 +605,24 @@ export function HomeMarketingSections() {
 
       {/* Footer */}
       <footer className="border-t border-[var(--border)] py-12 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="font-mono text-xs text-[var(--text-muted)]">
-            SalvageScore — AI-powered auction analysis for US &amp; UK buyers
-          </p>
-          <p className="font-mono text-xs text-[var(--text-muted)]">
-            For informational purposes only · Not financial advice · Always inspect before bidding
-          </p>
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 mb-6">
+            <p className="font-mono text-xs text-[var(--text-muted)]">
+              SalvageScore — AI-powered auction analysis for US &amp; UK buyers
+            </p>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <Link href="/privacy" className="font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">Privacy</Link>
+              <Link href="/terms" className="font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">Terms</Link>
+              <a href="mailto:vad@salvagescore.com" className="font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">Contact</a>
+              <Link href="/signin" className="font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">Sign in</Link>
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
+            <p className="font-mono text-xs text-[var(--text-muted)]">
+              For informational purposes only · Not financial advice · Always inspect before bidding
+            </p>
+            <p className="font-mono text-xs text-[var(--text-muted)]">Built in London</p>
+          </div>
         </div>
       </footer>
     </>

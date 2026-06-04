@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import { HomeMarketingSections } from './HomeMarketingSections';
+import { LaunchBanner } from './LaunchBanner';
 
 export default function Home() {
   return (
     <main>
+      <LaunchBanner />
+
       {/* Nav */}
       <nav className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
@@ -15,7 +18,7 @@ export default function Home() {
             href="/check"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--amber)] text-[#0A0B0E] font-display font-[700] text-sm uppercase tracking-[0.06em] hover:opacity-90 transition-opacity"
           >
-            Analyse a lot
+            Get a free report
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M3 7h8M7.5 4l3.5 3-3.5 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>

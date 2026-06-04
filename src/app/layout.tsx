@@ -2,11 +2,27 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { NavAuth } from './NavAuth';
 
 export const metadata: Metadata = {
   title: 'SalvageScore — Auction Analysis for US & UK Buyers',
   description:
     'Paste a salvage auction URL. Get AI damage analysis, full cost breakdown, and a go/no-go verdict in 90 seconds. Built for US and UK buyers.',
+  openGraph: {
+    title: 'SalvageScore — Auction Analysis for US & UK Buyers',
+    description:
+      'Paste a salvage auction URL. Get AI damage analysis, full cost breakdown, and a go/no-go verdict in 90 seconds.',
+    url: 'https://salvagescore.com',
+    siteName: 'SalvageScore',
+    locale: 'en_GB',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SalvageScore — Auction Analysis for US & UK Buyers',
+    description:
+      'AI damage analysis, full cost breakdown, and go/no-go verdict in 90 seconds. Free during launch.',
+  },
 };
 
 export default async function RootLayout({
@@ -39,34 +55,7 @@ export default async function RootLayout({
             SalvageScore
           </Link>
           <div className="flex items-center gap-4">
-          {user ? (
-            <>
-              <Link
-                href="/history"
-                className="font-mono text-[0.65rem] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-              >
-                History
-              </Link>
-              <span className="hidden sm:block font-mono text-[0.6rem] text-[var(--text-muted)] max-w-[140px] truncate">
-                {user.email ?? user.id}
-              </span>
-              <form method="POST" action="/api/auth/signout">
-                <button
-                  type="submit"
-                  className="font-mono text-[0.65rem] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-                >
-                  Sign out
-                </button>
-              </form>
-            </>
-          ) : (
-            <Link
-              href="/signin"
-              className="font-mono text-[0.65rem] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-            >
-              Sign in
-            </Link>
-          )}
+            <NavAuth user={user} />
           </div>
         </header>
         {children}

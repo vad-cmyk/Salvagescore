@@ -792,7 +792,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
           <div className="animate-fade-up stagger-5 mt-4 p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
             <div className="flex items-center justify-between mb-4">
               <SectionLabel>Known Issues — {listing.year} {listing.make} {listing.model}</SectionLabel>
-              <span className="font-mono text-[0.65rem] text-[var(--text-muted)]">from AI knowledge base</span>
+              <span className="font-mono text-[0.65rem] text-[var(--amber)]/70 border border-[var(--amber)]/20 bg-[rgba(217,119,6,0.05)] rounded px-2 py-0.5">AI-suggested — verify before bidding</span>
             </div>
             <div className="space-y-3">
               {report.knownIssues.map((issue, i) => {
@@ -824,7 +824,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
               })}
             </div>
             <p className="mt-3 font-mono text-[0.6rem] text-[var(--text-muted)]">
-              Based on documented patterns for this make/model · Verify with a specialist before bidding
+              Based on likely patterns for this make/model · AI-suggested — always verify with a specialist before bidding
             </p>
           </div>
         )}
@@ -904,13 +904,13 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                 <p className="font-mono text-[0.6rem] text-[var(--text-muted)] mt-1">~{usOwnership.mpg} mpg · Gasoline</p>
               </div>
               <div className="p-3 rounded-lg border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.06)]">
-                <p className="font-mono text-[0.6rem] text-[var(--text-muted)] uppercase tracking-wider mb-1">Total / year</p>
+                <p className="font-mono text-[0.6rem] text-[var(--text-muted)] uppercase tracking-wider mb-1">Estimated annual essentials</p>
                 <p className="font-mono text-lg font-[700] leading-none text-[var(--amber-bright)]">${usOwnership.totalUsd.toLocaleString('en-US')}</p>
                 <p className="font-mono text-[0.6rem] text-[var(--text-muted)] mt-1">${Math.round(usOwnership.totalUsd / 12).toLocaleString('en-US')}/mo</p>
               </div>
             </div>
             <p className="font-mono text-[0.6rem] text-[var(--text-muted)] leading-[1.6]">
-              Estimates only · Registration varies widely by state · Insurance for rebuilt/salvage titles · Fuel at ~$3.30/gal · Excludes servicing &amp; tyres
+              Includes: registration, insurance (rebuilt title est.), fuel at ~$3.30/gal · Excludes: servicing, tyres, maintenance, parking · Registration varies widely by state
             </p>
           </div>
         ) : !isUsBuyer && report.ownershipCosts && (
@@ -938,14 +938,14 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                 note={report.ownershipCosts.fuelType}
               />
               <CostPill
-                label="Total / year"
+                label="Estimated annual essentials"
                 valueGbp={report.ownershipCosts.annualTotalGbp}
                 note={`${fmt(Math.round(report.ownershipCosts.annualTotalGbp / 12))}/mo`}
                 highlight
               />
             </div>
             <p className="font-mono text-[0.6rem] text-[var(--text-muted)] leading-[1.6]">
-              Estimates only · VED from DVLA bands · Insurance group from CAP HPI · Fuel at current UK pump prices · Excludes servicing, tyres &amp; MOT
+              Includes: road tax (VED), insurance (est. group), fuel at UK pump prices · Excludes: servicing, tyres, MOT, parking
             </p>
           </div>
         )}
