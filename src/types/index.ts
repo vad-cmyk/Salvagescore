@@ -52,12 +52,22 @@ export type CriticalFlags = {
   nonRunner?: boolean;
 };
 
+/** New vs. used/reconditioned cost option for a major replacement part. */
+export type PartOption = {
+  label: string;        // e.g. "New OEM", "Used/salvage", "Reconditioned"
+  minGbp: number;
+  maxGbp: number;
+  note?: string;        // e.g. "Dealer-only, long lead time"
+};
+
 /** One probable cause of non-runner status, with best/worst repair cost in GBP. */
 export type MechanicalScenario = {
   cause: string;
   probability: 'high' | 'medium' | 'low';
   description: string;
   costGbp: { min: number; max: number };
+  /** New vs. used/reconditioned options for the main replacement part (if applicable). */
+  partOptions?: PartOption[];
 };
 
 export type DamageFindings = {

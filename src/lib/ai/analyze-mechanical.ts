@@ -27,16 +27,27 @@ Respond ONLY with a valid JSON array — no markdown, no explanation:
     "cause": "concise cause name (e.g. 'Dead 12V battery')",
     "probability": "high | medium | low",
     "description": "1–2 sentences: what failed, how to confirm before buying",
-    "costGbp": { "min": 150, "max": 400 }
+    "costGbp": { "min": 150, "max": 400 },
+    "partOptions": [
+      { "label": "New OEM", "minGbp": 100, "maxGbp": 200, "note": "optional short note" },
+      { "label": "Used/salvage", "minGbp": 40, "maxGbp": 80 }
+    ]
   }
 ]
 
 Rules:
 - List exactly 4–6 scenarios, highest probability first
-- costGbp = total diagnosis + parts + labour at a UK independent garage
+- costGbp = total all-in cost (diagnosis + parts + labour) at a UK independent garage
 - Include both cheap/simple scenarios AND catastrophic ones
 - probability "high" = most vehicles presenting this way have this cause
 - Do NOT include scenarios with no realistic connection to this make/model/mileage
+- partOptions = realistic UK market prices for the key replacement part only (not labour). Include:
+  * "New OEM" — main dealer / OEM supplier price for a brand-new part
+  * "Reconditioned" — only if a reconditioned unit is realistically available for this part (e.g. engines, gearboxes, HV batteries)
+  * "Used/salvage" — typical eBay UK / breakers yard price for a good used example
+  * For consumables (battery, spark plugs, filters) omit "Used/salvage" and just show "New OEM" and optionally "Aftermarket"
+  * Omit "note" unless there is something genuinely important (e.g. "Dealer-only, long lead time", "High warranty risk on used units")
+- partOptions MUST reflect this specific make/model/year — give realistic prices, not generic ranges
 - Return only the JSON array`;
 
 /** Generate mechanical failure scenarios for a non-runner listing. */
@@ -45,7 +56,7 @@ export async function analyzeMechanicalFailure(listing: Listing): Promise<Mechan
   try {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
+      max_tokens: 2048,
       messages: [{ role: 'user', content: PROMPT_TEMPLATE(listing) }],
     });
 

@@ -906,7 +906,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
             )}
 
             {/* Per-scenario list */}
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {mechScenarios.map((s, i) => {
                 const probColor = s.probability === 'high'
                   ? 'text-[#EF4444] border-[#EF4444]/30 bg-[rgba(239,68,68,0.07)]'
@@ -914,19 +914,43 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                   ? 'text-[#F97316] border-[#F97316]/30 bg-[rgba(249,115,22,0.07)]'
                   : 'text-[#EAB308] border-[#EAB308]/30 bg-[rgba(234,179,8,0.07)]';
                 return (
-                  <div key={i} className="p-3 rounded-lg border border-[rgba(249,115,22,0.2)] bg-[var(--bg-surface)]">
-                    <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
+                  <div key={i} className="rounded-lg border border-[rgba(249,115,22,0.2)] bg-[var(--bg-surface)] overflow-hidden">
+                    {/* Header row */}
+                    <div className="flex items-start justify-between gap-3 flex-wrap px-3 pt-3 pb-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`font-mono text-[0.6rem] font-[700] uppercase tracking-wide px-1.5 py-0.5 rounded border ${probColor}`}>
                           {s.probability}
                         </span>
                         <p className="font-mono text-[0.8rem] font-[600] text-[var(--text-primary)]">{s.cause}</p>
                       </div>
-                      <span className="font-mono text-[0.7rem] text-[var(--text-muted)] shrink-0 tabular-nums">
-                        £{s.costGbp.min.toLocaleString()}–£{s.costGbp.max.toLocaleString()}
-                      </span>
+                      <div className="text-right shrink-0">
+                        <span className="font-mono text-[0.6rem] text-[var(--text-muted)] uppercase tracking-wider block">All-in cost</span>
+                        <span className="font-mono text-[0.75rem] font-[600] text-[var(--text-primary)] tabular-nums">
+                          £{s.costGbp.min.toLocaleString()}–£{s.costGbp.max.toLocaleString()}
+                        </span>
+                      </div>
                     </div>
-                    <p className="font-mono text-[0.72rem] text-[var(--text-secondary)] leading-[1.5]">{s.description}</p>
+                    <p className="font-mono text-[0.72rem] text-[var(--text-secondary)] leading-[1.5] px-3 pb-2">{s.description}</p>
+
+                    {/* Parts price table */}
+                    {s.partOptions && s.partOptions.length > 0 && (
+                      <div className="border-t border-[rgba(249,115,22,0.12)] bg-[rgba(0,0,0,0.15)] px-3 py-2">
+                        <p className="font-mono text-[0.58rem] text-[var(--text-muted)] uppercase tracking-wider mb-1.5">Parts cost (UK market, excl. labour)</p>
+                        <div className="flex flex-wrap gap-2">
+                          {s.partOptions.map((opt, j) => (
+                            <div key={j} className="flex items-center gap-2 px-2 py-1 rounded border border-[var(--border)] bg-[var(--bg)]">
+                              <span className="font-mono text-[0.6rem] text-[var(--text-muted)]">{opt.label}</span>
+                              <span className="font-mono text-[0.7rem] font-[600] text-[var(--text-primary)] tabular-nums">
+                                £{opt.minGbp.toLocaleString()}–£{opt.maxGbp.toLocaleString()}
+                              </span>
+                              {opt.note && (
+                                <span className="font-mono text-[0.58rem] text-[var(--text-muted)] italic">{opt.note}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
