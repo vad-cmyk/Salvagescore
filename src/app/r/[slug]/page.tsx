@@ -419,9 +419,11 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                     <DataRow label={listing.source === 'copart-uk' ? 'Total UK cost' : 'Total to road-legal'} value={fmt(cost.totalGbp)} highlight />
                   </div>
                 </div>
-                <p className="mt-3 font-mono text-[0.7rem] text-[var(--text-muted)]">
-                  Rate: 1 GBP = {cost.exchangeRateUsed} USD ({cost.exchangeRateDate})
-                </p>
+                {listing.source !== 'copart-uk' && (
+                  <p className="mt-3 font-mono text-[0.7rem] text-[var(--text-muted)]">
+                    Rate: 1 GBP = {cost.exchangeRateUsed} USD ({cost.exchangeRateDate})
+                  </p>
+                )}
 
                 {/* Non-runner mechanical cost row — shown inline in the cost panel */}
                 {isNonRunner && (
