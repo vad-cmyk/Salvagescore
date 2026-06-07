@@ -393,7 +393,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
 
           {/* Cost */}
           <div className="md:col-span-1 p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
-            <SectionLabel>{isUsBuyer ? 'Cost Estimate' : 'UK Landed Cost'}</SectionLabel>
+            <SectionLabel>{isUsBuyer ? 'Cost Estimate' : listing.source === 'copart-uk' ? 'UK Cost' : 'UK Landed Cost'}</SectionLabel>
             {isUsBuyer ? (
               /* US buyer: show bid + repair only, no import costs */
               <div className="mt-3 space-y-1.5">
@@ -416,7 +416,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                     <DataRow key={item.label} label={item.label} value={fmt(item.amountGbp)} />
                   ))}
                   <div className="border-t border-[var(--border)] pt-2 mt-2">
-                    <DataRow label="Total to road-legal" value={fmt(cost.totalGbp)} highlight />
+                    <DataRow label={listing.source === 'copart-uk' ? 'Total UK cost' : 'Total to road-legal'} value={fmt(cost.totalGbp)} highlight />
                   </div>
                 </div>
                 <p className="mt-3 font-mono text-[0.7rem] text-[var(--text-muted)]">
@@ -905,8 +905,8 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
               </div>
             )}
 
-            {/* Per-scenario list */}
-            <div className="space-y-3">
+            {/* Diagnostic scenarios */}
+            <div className="space-y-2.5">
               {mechScenarios.map((s, i) => {
                 const probColor = s.probability === 'high'
                   ? 'text-[#EF4444] border-[#EF4444]/30 bg-[rgba(239,68,68,0.07)]'
@@ -914,9 +914,8 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                   ? 'text-[#F97316] border-[#F97316]/30 bg-[rgba(249,115,22,0.07)]'
                   : 'text-[#EAB308] border-[#EAB308]/30 bg-[rgba(234,179,8,0.07)]';
                 return (
-                  <div key={i} className="rounded-lg border border-[rgba(249,115,22,0.2)] bg-[var(--bg-surface)] overflow-hidden">
-                    {/* Header row */}
-                    <div className="flex items-start justify-between gap-3 flex-wrap px-3 pt-3 pb-2">
+                  <div key={i} className="p-3 rounded-lg border border-[rgba(249,115,22,0.2)] bg-[var(--bg-surface)]">
+                    <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`font-mono text-[0.6rem] font-[700] uppercase tracking-wide px-1.5 py-0.5 rounded border ${probColor}`}>
                           {s.probability}
@@ -924,39 +923,54 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                         <p className="font-mono text-[0.8rem] font-[600] text-[var(--text-primary)]">{s.cause}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="font-mono text-[0.6rem] text-[var(--text-muted)] uppercase tracking-wider block">All-in cost</span>
+                        <span className="font-mono text-[0.58rem] text-[var(--text-muted)] uppercase tracking-wider block">All-in cost</span>
                         <span className="font-mono text-[0.75rem] font-[600] text-[var(--text-primary)] tabular-nums">
                           £{s.costGbp.min.toLocaleString()}–£{s.costGbp.max.toLocaleString()}
                         </span>
                       </div>
                     </div>
-                    <p className="font-mono text-[0.72rem] text-[var(--text-secondary)] leading-[1.5] px-3 pb-2">{s.description}</p>
-
-                    {/* Parts price table */}
-                    {s.partOptions && s.partOptions.length > 0 && (
-                      <div className="border-t border-[rgba(249,115,22,0.12)] bg-[rgba(0,0,0,0.15)] px-3 py-2">
-                        <p className="font-mono text-[0.58rem] text-[var(--text-muted)] uppercase tracking-wider mb-1.5">Parts cost (UK market, excl. labour)</p>
-                        <div className="flex flex-wrap gap-2">
-                          {s.partOptions.map((opt, j) => (
-                            <div key={j} className="flex items-center gap-2 px-2 py-1 rounded border border-[var(--border)] bg-[var(--bg)]">
-                              <span className="font-mono text-[0.6rem] text-[var(--text-muted)]">{opt.label}</span>
-                              <span className="font-mono text-[0.7rem] font-[600] text-[var(--text-primary)] tabular-nums">
-                                £{opt.minGbp.toLocaleString()}–£{opt.maxGbp.toLocaleString()}
-                              </span>
-                              {opt.note && (
-                                <span className="font-mono text-[0.58rem] text-[var(--text-muted)] italic">{opt.note}</span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    <p className="font-mono text-[0.72rem] text-[var(--text-secondary)] leading-[1.5]">{s.description}</p>
                   </div>
                 );
               })}
             </div>
+
+            {/* Possible repair costs — part prices by new / used / reconditioned */}
+            {mechScenarios.some((s) => s.partOptions && s.partOptions.length > 0) && (
+              <div className="mt-4 pt-4 border-t border-[rgba(249,115,22,0.2)]">
+                <p className="font-mono text-[0.6rem] text-[var(--text-muted)] uppercase tracking-wider mb-3">
+                  Possible repair costs — parts only, excl. labour (UK market)
+                </p>
+                <div className="space-y-3">
+                  {mechScenarios.filter((s) => s.partOptions && s.partOptions.length > 0).map((s, i) => (
+                    <div key={i} className="rounded-xl border border-[rgba(249,115,22,0.25)] bg-[rgba(0,0,0,0.12)] overflow-hidden">
+                      <div className="px-4 py-2.5 bg-[rgba(249,115,22,0.08)] border-b border-[rgba(249,115,22,0.15)]">
+                        <p className="font-mono text-[0.75rem] font-[600] text-[var(--text-primary)]">{s.cause}</p>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[rgba(249,115,22,0.12)]">
+                        {s.partOptions!.map((opt, j) => (
+                          <div key={j} className="px-4 py-3">
+                            <p className="font-mono text-[0.58rem] text-[var(--text-muted)] uppercase tracking-wider mb-1">{opt.label}</p>
+                            <p className="font-mono text-[1.15rem] font-[700] leading-none text-[var(--text-primary)] tabular-nums">
+                              £{opt.minGbp.toLocaleString()}
+                            </p>
+                            <p className="font-mono text-[0.7rem] text-[var(--text-muted)] tabular-nums mt-0.5">
+                              up to £{opt.maxGbp.toLocaleString()}
+                            </p>
+                            {opt.note && (
+                              <p className="font-mono text-[0.58rem] text-[var(--amber)]/70 mt-1 leading-[1.4]">{opt.note}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <p className="mt-3 font-mono text-[0.6rem] text-[var(--text-muted)]">
-              Costs = diagnosis + parts + labour at a UK independent garage · These are scenarios, not guarantees — actual cost is unknown until the vehicle is inspected · Major drivetrain failures (engine, HV battery, gearbox) can easily exceed the worst-case figure · Do not bid without a pre-purchase diagnostic inspection
+              All-in costs include diagnosis + parts + labour at a UK independent garage · Part costs are estimates — actual cost unknown until inspected · Major repairs (engine, HV battery, gearbox) can easily exceed these figures · Do not bid without a pre-purchase diagnostic inspection
             </p>
           </div>
         )}

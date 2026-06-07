@@ -314,7 +314,7 @@ export default function CheckPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   'AI photo analysis',
-                  'UK landed cost',
+                  'UK cost breakdown',
                   'Resale ceiling',
                   'Bid calculator',
                   'Known issues',
