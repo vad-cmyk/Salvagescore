@@ -408,7 +408,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                 </p>
               </div>
             ) : (
-              /* UK buyer: full import breakdown */
+              /* UK buyer: full cost breakdown */
               <>
                 <div className="mt-3 space-y-1.5">
                   <DataRow label="Hammer" value={fmt(cost.hammerGbp)} highlight />
@@ -422,6 +422,43 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                 <p className="mt-3 font-mono text-[0.7rem] text-[var(--text-muted)]">
                   Rate: 1 GBP = {cost.exchangeRateUsed} USD ({cost.exchangeRateDate})
                 </p>
+
+                {/* Non-runner mechanical cost row — shown inline in the cost panel */}
+                {isNonRunner && (
+                  <div className="mt-3 pt-3 border-t border-[#F97316]/30">
+                    <p className="font-mono text-[0.6rem] text-[#F97316]/80 uppercase tracking-wider mb-2">Not included — mechanical repair</p>
+                    <div className="space-y-1">
+                      {mechBestGbp !== null && (
+                        <div className="flex justify-between items-baseline gap-2">
+                          <span className="font-mono text-xs text-[var(--text-muted)]">Best case (e.g. battery)</span>
+                          <span className="font-mono text-xs font-[600] text-[#22C55E] tabular-nums">{fmt(mechBestGbp)}</span>
+                        </div>
+                      )}
+                      {mechExpectedGbp !== null && (
+                        <div className="flex justify-between items-baseline gap-2">
+                          <span className="font-mono text-xs text-[var(--text-muted)]">Expected (probability-weighted)</span>
+                          <span className="font-mono text-xs font-[600] text-[#F97316] tabular-nums">{fmt(mechExpectedGbp)}</span>
+                        </div>
+                      )}
+                      {mechWorstGbp !== null && (
+                        <div className="flex justify-between items-baseline gap-2">
+                          <span className="font-mono text-xs text-[var(--text-muted)]">Worst case (engine / HV battery)</span>
+                          <span className="font-mono text-xs font-[600] text-[#EF4444] tabular-nums">{fmt(mechWorstGbp)}+</span>
+                        </div>
+                      )}
+                      {mechScenarios.length === 0 && (
+                        <p className="font-mono text-xs text-[#F97316]">Unknown — see Mechanical Scenarios below</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* AI cost narrative */}
+                {sections.costNarrative && (
+                  <div className="mt-3 font-mono text-[0.8125rem] text-[var(--text-secondary)] leading-[1.65]">
+                    {sections.costNarrative}
+                  </div>
+                )}
               </>
             )}
           </div>
