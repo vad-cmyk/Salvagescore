@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { ReportDemo } from './ReportDemo';
+import { FounderStory } from './FounderStory';
+import { BeforeAfterSlider } from './BeforeAfterSlider';
 
 // ── Scroll reveal hook ─────────────────────────────────────────────────────
 function useReveal() {
@@ -456,6 +459,9 @@ export function HomeMarketingSections() {
         </div>
       </section>
 
+      {/* Animated report demo */}
+      <ReportDemo enabled={true} />
+
       {/* What's in the report */}
       <section className="max-w-6xl mx-auto px-6 py-24">
         <div ref={featuresRef} className="reveal">
@@ -510,6 +516,9 @@ export function HomeMarketingSections() {
         </div>
       </section>
 
+      {/* Before/After slider — disabled until real images are ready */}
+      <BeforeAfterSlider enabled={false} beforeLabel="Cat N collision damage" afterLabel="Fully repaired" />
+
       {/* Sample verdict banner */}
       <section className="max-w-6xl mx-auto px-6 pb-24">
         <div className="relative rounded-2xl overflow-hidden border border-[var(--border)] bg-[var(--bg-surface)] p-8 md:p-12">
@@ -560,6 +569,9 @@ export function HomeMarketingSections() {
           </div>
         </div>
       </section>
+
+      {/* Founder story */}
+      <FounderStory enabled={true} />
 
       {/* Divider */}
       <div className="max-w-6xl mx-auto px-6">
