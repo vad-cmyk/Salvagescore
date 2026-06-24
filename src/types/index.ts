@@ -22,6 +22,8 @@ export type Listing = {
   auctionDate?: string;
   /** Copart UK only: false = vehicle does not start or cannot be driven. */
   driveStatus?: boolean;
+  /** Copart UK only: true = engine confirmed to start via Copart's "ENGINE START PROGRAM" (lcd field). */
+  engineStarts?: boolean;
 };
 
 export type DamageZone =

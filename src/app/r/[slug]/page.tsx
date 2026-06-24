@@ -79,6 +79,9 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
 
   const dealScore = computeDealScore(marginPct, damage, resale.confidence);
   const isNonRunner = damage.criticalFlags.nonRunner === true;
+  // When Copart UK's "Engine Start Program" confirms the engine starts but the car is still marked
+  // immobile (driveStatus=false / IV code), the issue isn't the engine — it's drivetrain/structural.
+  const isImmobileButEngineRuns = isNonRunner && listing.engineStarts === true;
 
   // Mechanical scenario cost range (best / worst across all scenarios)
   const mechScenarios = report.mechanicalScenarios ?? [];
@@ -202,7 +205,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
           </p>
         </div>
 
-        {/* NON-RUNNER critical warning */}
+        {/* NON-RUNNER / IMMOBILE critical warning */}
         {isNonRunner && (
           <div className="animate-fade-up stagger-2 mt-3 rounded-xl border-2 border-[#F97316]/50 bg-[rgba(249,115,22,0.07)] overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-2.5 bg-[rgba(249,115,22,0.15)] border-b border-[#F97316]/30">
@@ -210,19 +213,40 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                 <path d="M7 1.5l5.5 10h-11L7 1.5z" stroke="#F97316" strokeWidth="1.3" strokeLinejoin="round"/>
                 <path d="M7 5.5v2.5M7 9.5v.5" stroke="#F97316" strokeWidth="1.3" strokeLinecap="round"/>
               </svg>
-              <p className="font-mono text-xs font-[700] text-[#F97316] uppercase tracking-widest">Non-Runner — Mechanical cause unknown</p>
+              <p className="font-mono text-xs font-[700] text-[#F97316] uppercase tracking-widest">
+                {isImmobileButEngineRuns
+                  ? 'Immobile — Engine starts, but cannot be driven'
+                  : 'Non-Runner — Mechanical cause unknown'}
+              </p>
             </div>
             <div className="px-4 py-3 space-y-2">
-              <p className="font-mono text-[0.75rem] text-[var(--text-secondary)] leading-[1.7]">
-                This vehicle <strong className="text-[#F97316]">does not start or cannot be driven</strong>. The damage analysis above reflects visible body condition only — it cannot assess any mechanical failure.
-              </p>
-              <p className="font-mono text-[0.75rem] text-[var(--text-muted)] leading-[1.7]">
-                The repair estimate in this report <strong>does not include drivetrain costs</strong>.
-                {mechBestGbp !== null && mechWorstGbp !== null && (
-                  <> Mechanical repair could add anywhere from <strong className="text-[#22C55E]">{fmt(mechBestGbp)}</strong> (simple fix) to <strong className="text-[#EF4444]">{fmt(mechWorstGbp)}+</strong> (engine/HV battery). See the scenario breakdown below.</>
-                )}
-                {' '}A pre-purchase diagnostic inspection is essential before bidding.
-              </p>
+              {isImmobileButEngineRuns ? (
+                <>
+                  <p className="font-mono text-[0.75rem] text-[var(--text-secondary)] leading-[1.7]">
+                    Copart UK&apos;s <strong className="text-[#F97316]">Engine Start Program</strong> confirms the engine starts, but the lot is flagged as <strong className="text-[#F97316]">Immobile Vehicle (IV)</strong> — it cannot be driven away under its own power. This usually means damage to the drivetrain, brakes, suspension, steering, or chassis — not the engine.
+                  </p>
+                  <p className="font-mono text-[0.75rem] text-[var(--text-muted)] leading-[1.7]">
+                    The repair estimate above <strong>does not include the cost to make it drivable</strong>.
+                    {mechBestGbp !== null && mechWorstGbp !== null && (
+                      <> Likely cost range: <strong className="text-[#22C55E]">{fmt(mechBestGbp)}</strong> (sensor/module) to <strong className="text-[#EF4444]">{fmt(mechWorstGbp)}+</strong> (chassis straightening or gearbox replacement). See scenarios below.</>
+                    )}
+                    {' '}A pre-purchase inspection focused on the undercarriage and drivetrain is essential.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-mono text-[0.75rem] text-[var(--text-secondary)] leading-[1.7]">
+                    This vehicle <strong className="text-[#F97316]">does not start or cannot be driven</strong>. The damage analysis above reflects visible body condition only — it cannot assess any mechanical failure.
+                  </p>
+                  <p className="font-mono text-[0.75rem] text-[var(--text-muted)] leading-[1.7]">
+                    The repair estimate in this report <strong>does not include drivetrain costs</strong>.
+                    {mechBestGbp !== null && mechWorstGbp !== null && (
+                      <> Mechanical repair could add anywhere from <strong className="text-[#22C55E]">{fmt(mechBestGbp)}</strong> (simple fix) to <strong className="text-[#EF4444]">{fmt(mechWorstGbp)}+</strong> (engine/HV battery). See the scenario breakdown below.</>
+                    )}
+                    {' '}A pre-purchase diagnostic inspection is essential before bidding.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -425,14 +449,18 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                   </p>
                 )}
 
-                {/* Non-runner mechanical cost row — shown inline in the cost panel */}
+                {/* Non-runner / immobile mechanical cost row — shown inline in the cost panel */}
                 {isNonRunner && (
                   <div className="mt-3 pt-3 border-t border-[#F97316]/30">
-                    <p className="font-mono text-[0.6rem] text-[#F97316]/80 uppercase tracking-wider mb-2">Not included — mechanical repair</p>
+                    <p className="font-mono text-[0.6rem] text-[#F97316]/80 uppercase tracking-wider mb-2">
+                      {isImmobileButEngineRuns ? 'Not included — drivability repair' : 'Not included — mechanical repair'}
+                    </p>
                     <div className="space-y-1">
                       {mechBestGbp !== null && (
                         <div className="flex justify-between items-baseline gap-2">
-                          <span className="font-mono text-xs text-[var(--text-muted)]">Best case (e.g. battery)</span>
+                          <span className="font-mono text-xs text-[var(--text-muted)]">
+                            {isImmobileButEngineRuns ? 'Best case (sensor / module)' : 'Best case (e.g. battery)'}
+                          </span>
                           <span className="font-mono text-xs font-[600] text-[#22C55E] tabular-nums">{fmt(mechBestGbp)}</span>
                         </div>
                       )}
@@ -444,12 +472,14 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                       )}
                       {mechWorstGbp !== null && (
                         <div className="flex justify-between items-baseline gap-2">
-                          <span className="font-mono text-xs text-[var(--text-muted)]">Worst case (engine / HV battery)</span>
+                          <span className="font-mono text-xs text-[var(--text-muted)]">
+                            {isImmobileButEngineRuns ? 'Worst case (chassis / gearbox)' : 'Worst case (engine / HV battery)'}
+                          </span>
                           <span className="font-mono text-xs font-[600] text-[#EF4444] tabular-nums">{fmt(mechWorstGbp)}+</span>
                         </div>
                       )}
                       {mechScenarios.length === 0 && (
-                        <p className="font-mono text-xs text-[#F97316]">Unknown — see Mechanical Scenarios below</p>
+                        <p className="font-mono text-xs text-[#F97316]">Unknown — see scenarios below</p>
                       )}
                     </div>
                   </div>
@@ -918,9 +948,11 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                   <path d="M5 5c.3-1 1.2-1.5 2-1.5s1.7.5 1.7 1.5c0 1-1 1.5-1.7 1.8V8.5" stroke="#F97316" strokeWidth="1.3" strokeLinecap="round"/>
                   <circle cx="7" cy="10.5" r=".7" fill="#F97316"/>
                 </svg>
-                <SectionLabel>Mechanical Failure Scenarios</SectionLabel>
+                <SectionLabel>{isImmobileButEngineRuns ? 'Drivability Repair Scenarios' : 'Mechanical Failure Scenarios'}</SectionLabel>
               </div>
-              <span className="font-mono text-[0.65rem] text-[#F97316]/80 border border-[#F97316]/25 bg-[rgba(249,115,22,0.06)] rounded px-2 py-0.5">Non-runner — repair cost unknown</span>
+              <span className="font-mono text-[0.65rem] text-[#F97316]/80 border border-[#F97316]/25 bg-[rgba(249,115,22,0.06)] rounded px-2 py-0.5">
+                {isImmobileButEngineRuns ? 'Engine starts · car immobile' : 'Non-runner — repair cost unknown'}
+              </span>
             </div>
 
             {/* Cost summary boxes */}

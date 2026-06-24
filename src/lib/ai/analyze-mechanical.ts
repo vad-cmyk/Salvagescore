@@ -12,7 +12,7 @@ function engineNote(listing: Listing): string {
   return 'Standard petrol engine. Consider battery, starter motor, alternator, fuel pump, spark plugs, immobiliser, and internal engine failure in that order of probability.';
 }
 
-const PROMPT_TEMPLATE = (listing: Listing) => `You are a UK automotive technician diagnosing a non-starting vehicle being sold at salvage auction.
+const NON_STARTER_PROMPT = (listing: Listing) => `You are a UK automotive technician diagnosing a non-starting vehicle being sold at salvage auction.
 
 Vehicle: ${listing.year} ${listing.make} ${listing.model}${listing.trim ? ` ${listing.trim}` : ''}
 Declared damage: "${listing.primaryDamage}"${listing.secondaryDamage ? ` / "${listing.secondaryDamage}"` : ''}
@@ -50,14 +50,60 @@ Rules:
 - partOptions MUST reflect this specific make/model/year — give realistic prices, not generic ranges
 - Return only the JSON array`;
 
+const IMMOBILE_PROMPT = (listing: Listing) => `You are a UK automotive technician inspecting a salvage-auction vehicle whose engine CONFIRMED STARTS (Copart "Engine Start Program") but is marked as IMMOBILE — it cannot be driven away under its own power.
+
+Vehicle: ${listing.year} ${listing.make} ${listing.model}${listing.trim ? ` ${listing.trim}` : ''}
+Declared damage: "${listing.primaryDamage}"${listing.secondaryDamage ? ` / "${listing.secondaryDamage}"` : ''}
+Odometer: ${listing.odometerMiles.toLocaleString()} miles
+Title status: ${listing.titleStatus}
+
+Because the engine STARTS, you MUST exclude all engine-failure causes (no "seized engine", "blown head gasket", "dead battery", "fuel pump", "starter motor", etc.). The engine and its starting circuit are known-working.
+
+Instead, list the most probable reasons this car cannot be driven — focus on drivetrain, chassis, brake, suspension, steering, safety-system, and electronic causes that prevent SAFE driving (not engine starting). Examples:
+- Transmission/gearbox failure or fluid loss (no drive)
+- Driveshaft, propshaft, or differential damage
+- Wheel/hub/bearing damage — wheel won't turn
+- Brake system failure (no brakes, seized callipers, ABS module fault)
+- Suspension/steering structural damage (broken control arm, snapped strut, bent subframe)
+- Undercarriage / sump / floor-pan damage from impact or grounding
+- Airbag deployment with locked-out drivetrain (post-crash safety mode)
+- Immobiliser/ECU fault or key/security lockout
+- Cat S/N structural damage requiring chassis straightening before MOT
+- Disabled / theft-recovery lockdown by auction yard
+
+Respond ONLY with a valid JSON array — no markdown, no explanation:
+[
+  {
+    "cause": "concise cause name (e.g. 'Gearbox failure — no drive')",
+    "probability": "high | medium | low",
+    "description": "1–2 sentences: what's likely wrong, how to confirm before buying",
+    "costGbp": { "min": 400, "max": 1800 },
+    "partOptions": [
+      { "label": "New OEM", "minGbp": 800, "maxGbp": 1600, "note": "optional short note" },
+      { "label": "Reconditioned", "minGbp": 500, "maxGbp": 1000 },
+      { "label": "Used/salvage", "minGbp": 200, "maxGbp": 500 }
+    ]
+  }
+]
+
+Rules:
+- List exactly 4–6 NON-ENGINE scenarios, highest probability first
+- Weight scenarios toward what the declared damage / title status suggests (e.g. "UNDERCARRIAGE" damage → chassis/subframe/propshaft causes ranked highest)
+- costGbp = total all-in cost (diagnosis + parts + labour) at a UK independent garage
+- Include both cheap fixes (sensor/module replacement) AND catastrophic ones (chassis straightening, gearbox replacement)
+- partOptions = realistic UK market prices for this specific make/model/year
+- Do NOT include any engine-internal scenarios (engine, head gasket, timing belt, pistons, starter, battery, fuel system) — the engine is confirmed running
+- Return only the JSON array`;
+
 /** Generate mechanical failure scenarios for a non-runner listing. */
 export async function analyzeMechanicalFailure(listing: Listing): Promise<MechanicalScenario[]> {
   const client = new Anthropic();
+  const prompt = listing.engineStarts === true ? IMMOBILE_PROMPT(listing) : NON_STARTER_PROMPT(listing);
   try {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 2048,
-      messages: [{ role: 'user', content: PROMPT_TEMPLATE(listing) }],
+      messages: [{ role: 'user', content: prompt }],
     });
 
     const text = response.content[0].type === 'text' ? response.content[0].text : '[]';

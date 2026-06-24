@@ -18,6 +18,7 @@ type CopartUkSolrLot = {
   sad?: number;    // sale/auction date — Unix timestamp in milliseconds
   driveStatus?: boolean;  // false = does not start / cannot be driven
   lic?: string[];  // lot indicator codes — 'IV' = immobile vehicle
+  lcd?: string;    // lot condition description — "ENGINE START PROGRAM" = engine confirmed running
   lotNumberStr: string;
   dynamicLotDetails?: { currentBid: number };
 };
@@ -160,6 +161,8 @@ export async function scrapeListing(url: string): Promise<Listing> {
 
     // driveStatus=false or lic contains 'IV' (Immobile Vehicle) = non-runner
     const isImmobile = lot.driveStatus === false || (Array.isArray(lot.lic) && lot.lic.includes('IV'));
+    // lcd = "ENGINE START PROGRAM" means Copart has verified the engine starts (separate from driveStatus)
+    const engineStartsConfirmed = typeof lot.lcd === 'string' && /engine\s*start/i.test(lot.lcd);
 
     return {
       source: 'copart-uk',
@@ -179,6 +182,7 @@ export async function scrapeListing(url: string): Promise<Listing> {
       location: lot.yn || 'UK',
       auctionDate: lot.sad ? new Date(lot.sad).toISOString() : undefined,
       driveStatus: isImmobile ? false : true,
+      engineStarts: engineStartsConfirmed ? true : undefined,
     };
   } finally {
     await browser.close();
