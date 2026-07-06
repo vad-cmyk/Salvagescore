@@ -26,11 +26,34 @@ export const COPART_UK_GATE_FEES: [number, number][] = [
   [25000, 535],
 ];
 
-/** Internet bid fee rate (charged on top of gate fee, exc. VAT). */
-export const COPART_UK_INTERNET_BID_PCT = 0.05;
+/** Copart UK internet bid fee — flat per lot, exc. VAT (range £60–£69; using midpoint). */
+export const COPART_UK_INTERNET_BID_FEE_GBP = 65;
 
 /** Copart UK administration / title processing fee (exc. VAT). */
 export const COPART_UK_ADMIN_FEE_GBP = 120;
+
+/** Copart UK lot retrieval fee — vehicle movement to loading bay, exc. VAT. */
+export const COPART_UK_LOT_RETRIEVAL_FEE_GBP = 50;
+
+/** DVLA / V5 admin costs: new keeper notification, HPI check, logbook. */
+export const COPART_UK_DVLA_ADMIN_GBP = 55;
+
+/**
+ * Storage fee schedule: [day_number, daily_charge_gbp].
+ * Days 1–3 are free. Day 10+: £40/day (see COPART_UK_STORAGE_RATE_DAY10).
+ */
+export const COPART_UK_STORAGE_SCHEDULE: [number, number][] = [
+  [4,  5],
+  [5, 10],
+  [6, 15],
+  [7, 20],
+  [8, 20],
+  [9, 25],
+];
+export const COPART_UK_STORAGE_RATE_DAY10 = 40;
+
+/** Default assumption: buyer collects by this day (days held from auction date). */
+export const COPART_UK_STORAGE_ASSUME_DAYS = 7;
 
 /**
  * Fraction of base panel cost to apply depending on the worst damage severity

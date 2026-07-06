@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getReportBySlug } from '@/lib/supabase';
 import type { Report, ReportVerdict, Listing, DamageFindings } from '@/types';
 import { BidCalculator } from './BidCalculator';
+import { OverbidWarning } from './OverbidWarning';
 import { BodyshopSpec } from './BodyshopSpec';
 import { CopyVin } from './CopyVin';
 import { ShareButton, PrintButton, WhatsAppButton } from './ReportActions';
@@ -11,6 +12,13 @@ import AuctionCountdown from './AuctionCountdown';
 import UlezBadge from './UlezBadge';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import ClaimPrompt from './ClaimPrompt';
+import { ReportAdjustmentProvider } from './ReportAdjustmentContext';
+import { DealScoreGauge } from './DealScoreGauge';
+import { VerdictBadge } from './VerdictBadge';
+import { ConditionAdjuster } from './ConditionAdjuster';
+import { computeDealScore } from '@/lib/deal-score';
+import { buildDefaultToggles, computeMileagePenalty } from '@/lib/resale-model/condition-adjustments';
+import { categorise } from '@/lib/resale-model';
 
 export const revalidate = 0;
 
@@ -79,6 +87,17 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
 
   const dealScore = computeDealScore(marginPct, damage, resale.confidence);
   const isNonRunner = damage.criticalFlags.nonRunner === true;
+
+  // Condition adjuster setup
+  const mileagePenalty = computeMileagePenalty(listing.odometerMiles);
+  const isMileageInBase = resale.priceSource === 'cap-clean';
+  const initialToggles = buildDefaultToggles(
+    listing.titleStatus,
+    damage.criticalFlags,
+    listing.history?.accidents ?? 0,
+    mileagePenalty,
+    isMileageInBase,
+  );
   // When Copart UK's "Engine Start Program" confirms the engine starts but the car is still marked
   // immobile (driveStatus=false / IV code), the issue isn't the engine — it's drivetrain/structural.
   const isImmobileButEngineRuns = isNonRunner && listing.engineStarts === true;
@@ -115,6 +134,15 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
   const copartUsSearchUrl = `https://www.copart.com/vehicleFinder/results/?q[q]=${encodeURIComponent(listing.make + ' ' + listing.model.split(' ')[0])}&q[year]=${listing.year}`;
 
   return (
+    <ReportAdjustmentProvider
+      initialToggles={initialToggles}
+      baseValueGbp={resale.baseValueGbp}
+      totalCostGbp={effectiveTotalGbp}
+      accidentCount={listing.history?.accidents ?? 0}
+      mileagePenalty={mileagePenalty}
+      damage={damage}
+      confidence={resale.confidence}
+    >
     <div className="min-h-screen bg-[var(--bg)] px-4 py-10 md:px-8">
       <div className="max-w-4xl mx-auto">
 
@@ -157,11 +185,8 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
               </div>
             </div>
             <div className="flex items-start gap-2 shrink-0">
-              <DealScoreGauge score={dealScore} />
-              <div className={`shrink-0 border rounded-xl px-5 py-3 text-center backdrop-blur-sm bg-black/25 ${verdict.className} ${verdict.bgClass}`}>
-                <div className="font-display font-[800] text-2xl leading-none tracking-wider">{verdict.label}</div>
-                <div className="font-mono text-[0.65rem] mt-1 opacity-70">Verdict</div>
-              </div>
+              <DealScoreGauge />
+              <VerdictBadge />
             </div>
           </div>
 
@@ -437,7 +462,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                 <div className="mt-3 space-y-1.5">
                   <DataRow label="Hammer" value={fmt(cost.hammerGbp)} highlight />
                   {cost.lineItems.map((item) => (
-                    <DataRow key={item.label} label={item.label} value={fmt(item.amountGbp)} />
+                    <DataRow key={item.label} label={item.label} value={fmt(item.amountGbp)} note={item.note} />
                   ))}
                   <div className="border-t border-[var(--border)] pt-2 mt-2">
                     <DataRow label={listing.source === 'copart-uk' ? 'Total UK cost' : 'Total to road-legal'} value={fmt(cost.totalGbp)} highlight />
@@ -599,7 +624,18 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
           </div>
         </div>
 
-        {/* Bid calculator */}
+        {/* Condition adjuster — live valuation controls */}
+        {!isUsBuyer && (
+          <div className="animate-fade-up stagger-4">
+            <ConditionAdjuster
+              baseValueGbp={resale.baseValueGbp}
+              priceSource={resale.priceSource}
+              accidentCount={listing.history?.accidents ?? 0}
+            />
+          </div>
+        )}
+
+        {/* Bid calculator + overbid warning */}
         <div className="animate-fade-up stagger-4">
           <BidCalculator
             resaleCeilingGbp={effectiveCeilingGbp}
@@ -611,6 +647,18 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
             exchangeRateUsed={cost.exchangeRateUsed}
             isUkSource={listing.source === 'copart-uk'}
             isUsBuyer={isUsBuyer}
+            vehicleCategory={categorise(listing)}
+          />
+          <OverbidWarning
+            resaleCeilingGbp={effectiveCeilingGbp}
+            fixedCostsGbp={isUsBuyer
+              ? repairLineGbp + Math.round(cost.hammerGbp * 0.12)
+              : cost.totalGbp - cost.hammerGbp}
+            currentHammerGbp={cost.hammerGbp}
+            exchangeRateUsed={cost.exchangeRateUsed}
+            isUkSource={listing.source === 'copart-uk'}
+            isUsBuyer={isUsBuyer}
+            vehicleCategory={categorise(listing)}
           />
         </div>
 
@@ -1425,26 +1473,11 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
         </div>
       </div>
     </div>
+    </ReportAdjustmentProvider>
   );
 }
 
 // ── Helper functions ────────────────────────────────────────────────────────
-
-function computeDealScore(marginPct: number, damage: DamageFindings, confidence: string): number {
-  let score = 50;
-  score += Math.min(25, Math.max(-25, marginPct * 0.83));
-  if (damage.overallSeverity === 'cosmetic')   score += 15;
-  else if (damage.overallSeverity === 'panel') score += 5;
-  else if (damage.overallSeverity === 'structural') score -= 10;
-  else if (damage.overallSeverity === 'frame') score -= 20;
-  const flagCount = Object.values(damage.criticalFlags).filter(Boolean).length;
-  score -= flagCount * 10;
-  // Non-runner carries unknown mechanical cost — additional penalty on top of the flag hit above
-  if (damage.criticalFlags.nonRunner) score -= 20;
-  if (confidence === 'high') score += 5;
-  else if (confidence === 'low') score -= 10;
-  return Math.round(Math.min(100, Math.max(0, score)));
-}
 
 type TimelineStep = { label: string; note?: string };
 type Timeline = { minWeeks: number; maxWeeks: number; steps: TimelineStep[] };
@@ -1649,32 +1682,6 @@ const US_IMPORT_CHECKLIST: TimelineStep[] = [
 
 // ── UI components ────────────────────────────────────────────────────────────
 
-function DealScoreGauge({ score }: { score: number }) {
-  const isGood = score >= 70;
-  const isMid  = score >= 45;
-  const labelText  = isGood ? 'Good deal'  : isMid ? 'Caution'   : 'Poor deal';
-  const labelColor = isGood ? 'text-[#22C55E]' : isMid ? 'text-[#EAB308]' : 'text-[#EF4444]';
-  const strokeColor = isGood ? '#22C55E' : isMid ? '#EAB308' : '#EF4444';
-  const r = 20;
-  const circ = 2 * Math.PI * r;
-  const dash = (score / 100) * circ;
-  return (
-    <div className="shrink-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3">
-      <div className="relative w-12 h-12">
-        <svg viewBox="0 0 48 48" className="w-12 h-12 -rotate-90">
-          <circle cx="24" cy="24" r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="4" />
-          <circle cx="24" cy="24" r={r} fill="none" stroke={strokeColor} strokeWidth="4"
-            strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
-        </svg>
-        <span className="absolute inset-0 flex items-center justify-center font-mono font-[700] text-sm text-white">
-          {score}
-        </span>
-      </div>
-      <span className={`font-mono text-[0.6rem] mt-1 font-[600] ${labelColor}`}>{labelText}</span>
-    </div>
-  );
-}
-
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="font-mono text-xs text-[var(--text-muted)] font-[600] uppercase tracking-wider">
@@ -1683,11 +1690,16 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function DataRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function DataRow({ label, value, highlight, note }: { label: string; value: string; highlight?: boolean; note?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-2">
-      <span className="font-mono text-xs text-[var(--text-muted)] shrink-0">{label}</span>
-      <span className={`font-mono text-xs text-right ${highlight ? 'text-[var(--text-primary)] font-[600]' : 'text-[var(--text-secondary)]'}`}>
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <span className="font-mono text-xs text-[var(--text-muted)]">{label}</span>
+        {note && (
+          <p className="font-mono text-[0.58rem] text-[var(--text-muted)]/60 mt-0.5 leading-[1.4]">{note}</p>
+        )}
+      </div>
+      <span className={`font-mono text-xs text-right shrink-0 ${highlight ? 'text-[var(--text-primary)] font-[600]' : 'text-[var(--text-secondary)]'}`}>
         {value}
       </span>
     </div>

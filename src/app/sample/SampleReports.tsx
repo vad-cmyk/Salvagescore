@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { BidCalculator } from '@/app/r/[slug]/BidCalculator';
+import { OverbidWarning } from '@/app/r/[slug]/OverbidWarning';
 
 // ── Shared UI ──────────────────────────────────────────────────────────────
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -119,6 +120,7 @@ const REPORTS = [
       exchangeRateUsed: 1.27,
       isUkSource: true,
       isUsBuyer: false,
+      vehicleCategory: 'car' as const,
     },
     knownIssues: [
       { category: 'Engine', issue: 'High-pressure fuel pump failure on 2.0 TDI — symptoms: rough running, hard start', severity: 'moderate' as const },
@@ -170,6 +172,7 @@ const REPORTS = [
       exchangeRateUsed: 1.27,
       isUkSource: false,
       isUsBuyer: false,
+      vehicleCategory: 'truck_suv' as const,
     },
     knownIssues: [
       { category: 'AFM / Cylinder deactivation', issue: 'Active Fuel Management lifter failures on 6.2L V8 — very common, expensive', severity: 'major' as const },
@@ -216,6 +219,7 @@ const REPORTS = [
       exchangeRateUsed: 1.27,
       isUkSource: false,
       isUsBuyer: true,
+      vehicleCategory: 'car' as const,
     },
     knownIssues: [
       { category: 'Engine', issue: 'B48 engine coolant leak at expansion tank / hose junction — common on 2019–2022', severity: 'moderate' as const },
@@ -336,6 +340,15 @@ export function SampleReports() {
 
         {/* Bid calculator */}
         <BidCalculator {...report.bidCalc} />
+        <OverbidWarning
+          resaleCeilingGbp={report.bidCalc.resaleCeilingGbp}
+          fixedCostsGbp={report.bidCalc.fixedCostsGbp}
+          currentHammerGbp={report.bidCalc.currentHammerGbp}
+          exchangeRateUsed={report.bidCalc.exchangeRateUsed}
+          isUkSource={report.bidCalc.isUkSource}
+          isUsBuyer={report.bidCalc.isUsBuyer}
+          vehicleCategory={report.bidCalc.vehicleCategory}
+        />
 
         {/* Known issues */}
         <div className="mt-4 p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">

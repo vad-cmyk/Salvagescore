@@ -51,8 +51,9 @@ export default async function RootLayout({
       </head>
       <body className="bg-[#0A0B0E] text-[#F0EDE8] antialiased min-h-screen">
         <header className="no-print fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between">
-          <Link href="/" className="font-mono text-[0.7rem] font-[600] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors tracking-widest uppercase">
-            SalvageScore
+          <Link href="/check">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="SalvageScore" className="h-7 w-auto" />
           </Link>
           <div className="flex items-center gap-4">
             <NavAuth user={user} />

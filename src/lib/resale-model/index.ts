@@ -42,9 +42,9 @@ const BASE_VALUES: Record<string, number> = {
 
 const DEFAULT_BASE = 15000;
 
-type VehicleCategory = 'car' | 'truck_suv' | 'van';
+export type VehicleCategory = 'car' | 'truck_suv' | 'van';
 
-function categorise(listing: Listing): VehicleCategory {
+export function categorise(listing: Listing): VehicleCategory {
   const m = listing.model.toLowerCase();
   const truckKeywords = [
     'f-150', 'f-250', 'f-350', 'silverado', 'ram', 'tundra', 'tahoe',

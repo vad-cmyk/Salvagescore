@@ -1,8 +1,13 @@
 import type { CostBreakdown, CostLineItem, DamageFindings, HiddenRepairItem, Listing, RepairLineItem } from '@/types';
 import {
   COPART_UK_ADMIN_FEE_GBP,
+  COPART_UK_DVLA_ADMIN_GBP,
   COPART_UK_GATE_FEES,
-  COPART_UK_INTERNET_BID_PCT,
+  COPART_UK_INTERNET_BID_FEE_GBP,
+  COPART_UK_LOT_RETRIEVAL_FEE_GBP,
+  COPART_UK_STORAGE_ASSUME_DAYS,
+  COPART_UK_STORAGE_RATE_DAY10,
+  COPART_UK_STORAGE_SCHEDULE,
   COST_DEFAULTS,
   HIDDEN_DAMAGE_CONTINGENCY_PCT,
   PANEL_BASE_COST_GBP,
@@ -11,6 +16,17 @@ import {
   REPAIR_MULTIPLIERS,
   SEVERITY_COST_FRACTION,
 } from './defaults';
+
+/** Cumulative Copart UK storage charge for a given number of days held (from auction date). */
+function computeStorageFee(daysHeld: number): number {
+  if (daysHeld <= 3) return 0;
+  let fee = 0;
+  for (const [day, charge] of COPART_UK_STORAGE_SCHEDULE) {
+    if (daysHeld >= day) fee += charge;
+  }
+  if (daysHeld >= 10) fee += (daysHeld - 9) * COPART_UK_STORAGE_RATE_DAY10;
+  return fee;
+}
 import type { DamageSeverity } from '@/types';
 
 /** Convert USD to GBP using the configured static rate. */
@@ -30,12 +46,11 @@ export function computeVat(cifGbp: number, dutyGbp: number): number {
 
 /**
  * Calculate real Copart UK buyer fees for a given hammer price.
- * Structure: tiered gate fee + 5% internet bid fee + admin fee, all + 20% VAT.
+ * Structure: tiered gate fee + flat internet bid fee + admin fee, all + 20% VAT.
  */
 export function copartUkBuyerFees(hammerGbp: number): number {
   const gateFee = COPART_UK_GATE_FEES.filter(([min]) => hammerGbp >= min).at(-1)?.[1] ?? 25;
-  const internetFee = Math.max(50, Math.round(hammerGbp * COPART_UK_INTERNET_BID_PCT));
-  const subtotal = gateFee + internetFee + COPART_UK_ADMIN_FEE_GBP;
+  const subtotal = gateFee + COPART_UK_INTERNET_BID_FEE_GBP + COPART_UK_ADMIN_FEE_GBP;
   return Math.round(subtotal * (1 + COST_DEFAULTS.vatRate));
 }
 
@@ -350,15 +365,48 @@ export function buildCostBreakdown(inputs: CostModelInputs): CostBreakdown {
   const note = repairNote(damage, listing);
 
   if (isUkSource) {
-    const buyerFeesGbp = copartUkBuyerFees(hammerGbp);
+    const vat = COST_DEFAULTS.vatRate;
+    const gateFeeExcVat = COPART_UK_GATE_FEES.filter(([min]) => hammerGbp >= min).at(-1)?.[1] ?? 25;
+    const gateFeeGbp       = Math.round(gateFeeExcVat * (1 + vat));
+    const internetFeeGbp   = Math.round(COPART_UK_INTERNET_BID_FEE_GBP * (1 + vat));
+    const adminFeeGbp      = Math.round(COPART_UK_ADMIN_FEE_GBP * (1 + vat));
+    const lotRetrievalGbp  = Math.round(COPART_UK_LOT_RETRIEVAL_FEE_GBP * (1 + vat));
+    const storageFeeGbp    = computeStorageFee(COPART_UK_STORAGE_ASSUME_DAYS);
+
     const lineItems: CostLineItem[] = [
       {
-        label: 'Copart UK buyer fees',
-        amountGbp: buyerFeesGbp,
-        note: 'Gate fee + 5% internet bid fee + admin — all inc. VAT (estimate, verify on copart.co.uk)',
+        label: 'Gate fee (inc. VAT)',
+        amountGbp: gateFeeGbp,
+        note: `Tiered on hammer price — exc. VAT: £${gateFeeExcVat}. All Copart fees + 20% VAT.`,
+      },
+      {
+        label: 'Internet bid fee (inc. VAT)',
+        amountGbp: internetFeeGbp,
+        note: 'Flat £60–£69/lot for online bidding. Verify on copart.co.uk.',
+      },
+      {
+        label: 'Administration fee (inc. VAT)',
+        amountGbp: adminFeeGbp,
+        note: '£120 exc. VAT — title processing and document handling.',
+      },
+      {
+        label: 'Lot retrieval fee (inc. VAT)',
+        amountGbp: lotRetrievalGbp,
+        note: '£50 exc. VAT — vehicle movement from lot to loading bay.',
+      },
+      {
+        label: `Storage — days 4–${COPART_UK_STORAGE_ASSUME_DAYS}`,
+        amountGbp: storageFeeGbp,
+        note: `Days 1–3 free. Day 10+: £40/day. Estimate assumes ${COPART_UK_STORAGE_ASSUME_DAYS}-day collection.`,
+      },
+      {
+        label: 'DVLA / V5 admin',
+        amountGbp: COPART_UK_DVLA_ADMIN_GBP,
+        note: 'New keeper notification, HPI check, logbook — approximate.',
       },
       { label: 'Repair estimate', amountGbp: repairTotalGbp, note },
     ];
+
     return {
       hammerGbp,
       lineItems,
@@ -372,6 +420,8 @@ export function buildCostBreakdown(inputs: CostModelInputs): CostBreakdown {
       exchangeRateDate,
       assumptions: [
         'UK-sourced vehicle — no import costs applied',
+        'Copart fees are estimates — verify current schedule on copart.co.uk',
+        'Storage assumes collection within 7 days; day 10+: £40/day',
         'Repair estimate is a guide — get quotes before bidding',
         `Hidden damage contingency: +${HIDDEN_DAMAGE_CONTINGENCY_PCT * 100}% of repair subtotal`,
       ],

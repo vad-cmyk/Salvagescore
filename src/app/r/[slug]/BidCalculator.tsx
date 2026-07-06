@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useContext } from 'react';
+import { ReportAdjustmentContext } from './ReportAdjustmentContext';
+import type { VehicleCategory } from '@/lib/resale-model';
 
 type Props = {
   resaleCeilingGbp: number;
@@ -12,12 +14,23 @@ type Props = {
   exchangeRateUsed: number;
   isUkSource: boolean;
   isUsBuyer?: boolean;
+  vehicleCategory: VehicleCategory;
 };
 
-const PRESETS = [10, 15, 20, 25];
+const ROI_RUNGS = [20, 30, 40, 50];
 
-function calcMaxBid(resale: number, fixed: number, marginPct: number) {
-  return Math.max(0, Math.round(resale * (1 - marginPct / 100) - fixed));
+const WHOLESALE_RATIO: Record<VehicleCategory, number> = {
+  car: 0.78,
+  truck_suv: 0.75,
+  van: 0.72,
+};
+
+function calcMaxBid(exit: number, fixed: number, marginPct: number) {
+  return Math.max(0, Math.round(exit * (1 - marginPct / 100) - fixed));
+}
+
+function calcActualMarginPct(exit: number, hammer: number, fixed: number): number {
+  return exit > 0 ? Math.round(((exit - hammer - fixed) / exit) * 100) : -100;
 }
 
 const REPAIR_ROWS = [
@@ -40,6 +53,111 @@ function cellColor(marginPct: number): string {
   return 'bg-[rgba(239,68,68,0.10)] text-[#EF4444] border-[rgba(239,68,68,0.20)]';
 }
 
+function marginColor(pct: number): string {
+  if (pct >= 15) return 'text-[#22C55E]';
+  if (pct >= 5)  return 'text-[#EAB308]';
+  if (pct >= 0)  return 'text-[#F97316]';
+  return 'text-[#EF4444]';
+}
+
+function ExitColumn({
+  label,
+  sublabel,
+  ceilingGbp,
+  maxBidGbp,
+  diffGbp,
+  actualPct,
+  targetPct,
+  fmtPrimary,
+  fmtSecondary,
+  isUkSource,
+  isUsBuyer,
+  highlight = false,
+}: {
+  label: string;
+  sublabel: string;
+  ceilingGbp: number;
+  maxBidGbp: number;
+  diffGbp: number;
+  actualPct: number;
+  targetPct: number;
+  fmtPrimary: (gbp: number) => string;
+  fmtSecondary: (gbp: number) => string;
+  isUkSource: boolean;
+  isUsBuyer: boolean;
+  highlight?: boolean;
+}) {
+  const isViable = maxBidGbp > 0;
+  const borderClass = highlight
+    ? 'border-[var(--amber)]/30 bg-[rgba(217,119,6,0.04)]'
+    : 'border-[var(--border)] bg-[var(--bg)]';
+
+  return (
+    <div className={`p-4 rounded-xl border ${borderClass}`}>
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div>
+          <p className="font-mono text-[0.6rem] font-[600] uppercase tracking-wider text-[var(--text-muted)]">
+            {label}
+          </p>
+          <p className="font-mono text-[0.55rem] text-[var(--text-muted)] mt-0.5">{sublabel}</p>
+        </div>
+        <span className="font-mono text-[0.62rem] text-[var(--text-muted)] shrink-0 mt-0.5">
+          {fmtPrimary(ceilingGbp)}
+        </span>
+      </div>
+
+      {isViable ? (
+        <>
+          <p className="font-mono text-[0.62rem] text-[var(--text-muted)] mb-1">
+            Max bid @ {targetPct}%
+          </p>
+          <div className="flex items-end gap-2 mb-2">
+            <span className="font-display font-[800] text-[clamp(1.5rem,4vw,2rem)] leading-none tracking-[-0.01em] text-[var(--text-primary)]">
+              {fmtPrimary(maxBidGbp)}
+            </span>
+            {(!isUkSource || isUsBuyer) && (
+              <span className="font-mono text-xs text-[var(--text-muted)] mb-0.5">
+                {fmtSecondary(maxBidGbp)}
+              </span>
+            )}
+          </div>
+
+          {diffGbp >= 0 ? (
+            <div className="flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <circle cx="7" cy="7" r="6" fill="rgba(34,197,94,0.15)" stroke="#22C55E" strokeWidth="1.5" />
+                <path d="M4 7l2 2 4-4" stroke="#22C55E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <p className="font-mono text-[0.62rem] text-[#22C55E]">
+                {fmtPrimary(diffGbp)} headroom
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <circle cx="7" cy="7" r="6" fill="rgba(239,68,68,0.12)" stroke="#EF4444" strokeWidth="1.5" />
+                <path d="M7 4v3.5M7 9.5v.5" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              <p className="font-mono text-[0.62rem] text-[#EF4444]">
+                {fmtPrimary(Math.abs(diffGbp))} over budget
+              </p>
+            </div>
+          )}
+
+          <p className="mt-1.5 font-mono text-[0.58rem] text-[var(--text-muted)]">
+            At current hammer ·{' '}
+            <span className={marginColor(actualPct)}>{actualPct}%</span> actual margin
+          </p>
+        </>
+      ) : (
+        <p className="font-mono text-xs text-[#EF4444]">
+          Doesn&apos;t work at {targetPct}%
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function BidCalculator({
   resaleCeilingGbp,
   fixedCostsGbp,
@@ -48,14 +166,21 @@ export function BidCalculator({
   exchangeRateUsed,
   isUkSource,
   isUsBuyer = false,
+  vehicleCategory,
 }: Props) {
-  const [targetPct, setTargetPct] = useState(15);
+  const [targetPct, setTargetPct] = useState(30);
   const [customVal, setCustomVal] = useState('');
 
-  const isCustom = !PRESETS.includes(targetPct);
+  const adjustmentCtx = useContext(ReportAdjustmentContext);
+  const retailCeiling = adjustmentCtx && !adjustmentCtx.isPartsOnly
+    ? adjustmentCtx.adjustedCeilingGbp
+    : resaleCeilingGbp;
+  const wholesaleRatio = WHOLESALE_RATIO[vehicleCategory];
+  const wholesaleCeiling = Math.round(retailCeiling * wholesaleRatio);
+
+  const isCustom = !ROI_RUNGS.includes(targetPct);
   const rate = exchangeRateUsed;
 
-  // Currency helpers — primary is USD for US buyers, GBP for UK buyers
   const fmtPrimary = (gbp: number) => isUsBuyer
     ? `$${Math.max(0, Math.round(gbp * rate)).toLocaleString('en-US')}`
     : `£${Math.max(0, Math.round(gbp)).toLocaleString('en-GB')}`;
@@ -63,13 +188,11 @@ export function BidCalculator({
     ? `≈ £${Math.max(0, Math.round(gbp)).toLocaleString('en-GB')}`
     : `≈ $${Math.max(0, Math.round(gbp * rate)).toLocaleString('en-US')}`;
 
-  const maxBidGbp = calcMaxBid(resaleCeilingGbp, fixedCostsGbp, targetPct);
-  const diffGbp = maxBidGbp - currentHammerGbp;
-  const isViable = maxBidGbp > 0;
+  const retailMaxBid = calcMaxBid(retailCeiling, fixedCostsGbp, targetPct);
+  const tradeMaxBid  = calcMaxBid(wholesaleCeiling, fixedCostsGbp, targetPct);
 
-  const actualMarginPct = Math.round(
-    ((resaleCeilingGbp - currentHammerGbp - fixedCostsGbp) / resaleCeilingGbp) * 100
-  );
+  const retailActualPct = calcActualMarginPct(retailCeiling, currentHammerGbp, fixedCostsGbp);
+  const tradeActualPct  = calcActualMarginPct(wholesaleCeiling, currentHammerGbp, fixedCostsGbp);
 
   function handleCustomChange(raw: string) {
     setCustomVal(raw);
@@ -82,12 +205,7 @@ export function BidCalculator({
     setCustomVal('');
   }
 
-  const ceilingLabel = isUsBuyer ? 'US market ref.' : 'Resale ceiling';
-  const fixedLabel = isUsBuyer
-    ? 'buyer fees + repair'
-    : isUkSource
-      ? 'buyer fees + repair'
-      : 'import + repair + compliance';
+  const categoryLabel = vehicleCategory === 'truck_suv' ? 'truck/suv' : vehicleCategory;
 
   return (
     <div className="mt-4 p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
@@ -96,20 +214,21 @@ export function BidCalculator({
         <p className="font-mono text-xs text-[var(--text-muted)] font-[600] uppercase tracking-wider">
           Max Bid Calculator
         </p>
-        <p className="font-mono text-[0.65rem] text-[var(--text-muted)]">
-          {ceilingLabel}&nbsp;·&nbsp;{fmtPrimary(resaleCeilingGbp)}
+        <p className="font-mono text-[0.62rem] text-[var(--text-muted)]">
+          {categoryLabel} · wholesale @ {Math.round(wholesaleRatio * 100)}%
         </p>
       </div>
 
-      {/* Profit target picker */}
+      {/* ROI target picker */}
       <div className="mb-5">
-        <p className="font-mono text-[0.65rem] text-[var(--text-muted)] uppercase tracking-wider mb-2">
+        <p className="font-mono text-[0.62rem] text-[var(--text-muted)] uppercase tracking-wider mb-2">
           Your profit target
         </p>
         <div className="flex items-center gap-2 flex-wrap">
-          {PRESETS.map((p) => (
+          {ROI_RUNGS.map((p) => (
             <button
               key={p}
+              type="button"
               onClick={() => handlePreset(p)}
               className={[
                 'px-4 py-1.5 rounded-lg font-mono text-xs font-[600] transition-colors cursor-pointer',
@@ -141,107 +260,84 @@ export function BidCalculator({
         </div>
       </div>
 
-      {/* Main result */}
-      <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--bg)]">
-        <p className="font-mono text-[0.65rem] text-[var(--text-muted)] uppercase tracking-wider mb-3">
-          Max bid to achieve {targetPct}% margin
-        </p>
-
-        {isViable ? (
-          <>
-            <div className="flex items-end gap-3 mb-2">
-              <span className="font-display font-[800] text-[clamp(2rem,6vw,3rem)] leading-none tracking-[-0.01em] text-[var(--text-primary)]">
-                {fmtPrimary(maxBidGbp)}
-              </span>
-              {(!isUkSource || isUsBuyer) && (
-                <span className="font-mono text-sm text-[var(--text-muted)] mb-1">
-                  {fmtSecondary(maxBidGbp)}
-                </span>
-              )}
-            </div>
-
-            {diffGbp >= 0 ? (
-              <div className="flex items-center gap-2 mt-3">
-                <span className="text-[#22C55E]">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <circle cx="7" cy="7" r="6" fill="rgba(34,197,94,0.15)" stroke="#22C55E" strokeWidth="1.5" />
-                    <path d="M4 7l2 2 4-4" stroke="#22C55E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <p className="font-mono text-xs text-[#22C55E]">
-                  {fmtPrimary(diffGbp)} room above current price
-                </p>
-              </div>
-            ) : (
-              <div className="flex items-start gap-2 mt-3">
-                <span className="text-[#EF4444] shrink-0 mt-0.5">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <circle cx="7" cy="7" r="6" fill="rgba(239,68,68,0.12)" stroke="#EF4444" strokeWidth="1.5" />
-                    <path d="M7 4v3.5M7 9.5v.5" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <p className="font-mono text-xs text-[#EF4444]">
-                  Current price is {fmtPrimary(Math.abs(diffGbp))} over budget for {targetPct}% margin
-                </p>
-              </div>
-            )}
-
-            <p className="mt-1.5 font-mono text-[0.65rem] text-[var(--text-muted)]">
-              At current hammer · actual margin is&nbsp;
-              <span className={actualMarginPct >= 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'}>
-                {actualMarginPct}%
-              </span>
-            </p>
-          </>
-        ) : (
-          <p className="font-mono text-sm text-[#EF4444]">
-            Deal doesn&apos;t work at {targetPct}% — fixed costs alone exceed the market value at that margin.
-          </p>
-        )}
+      {/* Two-column exit scenarios */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        <ExitColumn
+          label="Private Sale"
+          sublabel="retail exit · full market value"
+          ceilingGbp={retailCeiling}
+          maxBidGbp={retailMaxBid}
+          diffGbp={retailMaxBid - currentHammerGbp}
+          actualPct={retailActualPct}
+          targetPct={targetPct}
+          fmtPrimary={fmtPrimary}
+          fmtSecondary={fmtSecondary}
+          isUkSource={isUkSource}
+          isUsBuyer={isUsBuyer}
+          highlight
+        />
+        <ExitColumn
+          label="Trade / Quick Sale"
+          sublabel={`auction / dealer exit · ${Math.round(wholesaleRatio * 100)}% of retail`}
+          ceilingGbp={wholesaleCeiling}
+          maxBidGbp={tradeMaxBid}
+          diffGbp={tradeMaxBid - currentHammerGbp}
+          actualPct={tradeActualPct}
+          targetPct={targetPct}
+          fmtPrimary={fmtPrimary}
+          fmtSecondary={fmtSecondary}
+          isUkSource={isUkSource}
+          isUsBuyer={isUsBuyer}
+        />
       </div>
 
-      {/* Reference grid */}
-      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {PRESETS.map((p) => {
-          const bid = calcMaxBid(resaleCeilingGbp, fixedCostsGbp, p);
-          const active = targetPct === p && !isCustom;
-          return (
-            <button
-              key={p}
-              onClick={() => handlePreset(p)}
-              className={[
-                'p-3 rounded-lg text-left border cursor-pointer transition-colors',
-                active
-                  ? 'border-[var(--amber)] bg-[rgba(217,119,6,0.08)]'
-                  : 'border-[var(--border)] hover:border-[var(--text-muted)]',
-              ].join(' ')}
-            >
-              <p className="font-mono text-[0.6rem] text-[var(--text-muted)] uppercase tracking-wider mb-1">
-                {p}% margin
-              </p>
-              <p className={`font-mono text-xs font-[600] ${active ? 'text-[var(--amber)]' : 'text-[var(--text-secondary)]'}`}>
-                {fmtPrimary(bid)}
-              </p>
-              {(!isUkSource || isUsBuyer) && bid > 0 && (
-                <p className="font-mono text-[0.6rem] text-[var(--text-muted)] mt-0.5">
-                  {fmtSecondary(bid)}
-                </p>
-              )}
-            </button>
-          );
-        })}
+      {/* ROI ladder */}
+      <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+        <div className="grid grid-cols-3 px-4 py-2 bg-[var(--bg-elevated)] border-b border-[var(--border)]">
+          <span className="font-mono text-[0.55rem] text-[var(--text-muted)] uppercase tracking-wider">ROI target</span>
+          <span className="font-mono text-[0.55rem] text-[var(--text-muted)] uppercase tracking-wider">Private</span>
+          <span className="font-mono text-[0.55rem] text-[var(--text-muted)] uppercase tracking-wider">Trade</span>
+        </div>
+        <div className="divide-y divide-[var(--border)]">
+          {ROI_RUNGS.map((p) => {
+            const rb = calcMaxBid(retailCeiling, fixedCostsGbp, p);
+            const tb = calcMaxBid(wholesaleCeiling, fixedCostsGbp, p);
+            const active = targetPct === p && !isCustom;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => handlePreset(p)}
+                className={[
+                  'w-full grid grid-cols-3 px-4 py-2.5 text-left transition-colors cursor-pointer',
+                  active ? 'bg-[rgba(217,119,6,0.08)]' : 'hover:bg-[var(--bg-elevated)]',
+                ].join(' ')}
+              >
+                <span className={`font-mono text-xs font-[700] ${active ? 'text-[var(--amber)]' : 'text-[var(--text-muted)]'}`}>
+                  {p}%
+                </span>
+                <span className={`font-mono text-xs font-[600] ${active ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
+                  {fmtPrimary(rb)}
+                </span>
+                <span className={`font-mono text-xs ${active ? 'text-[var(--text-secondary)]' : 'text-[var(--text-muted)]'}`}>
+                  {fmtPrimary(tb)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <p className="mt-3 font-mono text-[0.6rem] text-[var(--text-muted)] leading-[1.6]">
-        Formula: ({ceilingLabel} × (1 − margin%)) − fixed costs&nbsp;·&nbsp;
-        Fixed costs = {fmtPrimary(fixedCostsGbp)} ({fixedLabel})
+      <p className="mt-3 font-mono text-[0.58rem] text-[var(--text-muted)] leading-[1.6]">
+        Formula: exit × (1 − ROI%) − fixed costs&nbsp;·&nbsp;
+        Fixed costs = {fmtPrimary(fixedCostsGbp)}
       </p>
 
-      {/* Sensitivity matrix */}
+      {/* Sensitivity matrix (private sale exit) */}
       {repairEstimateGbp > 0 && (
         <div className="mt-5 pt-4 border-t border-[var(--border)]">
-          <p className="font-mono text-[0.65rem] text-[var(--text-muted)] uppercase tracking-wider mb-3">
-            Profit sensitivity — at current bid of {fmtPrimary(currentHammerGbp)}
+          <p className="font-mono text-[0.62rem] text-[var(--text-muted)] uppercase tracking-wider mb-3">
+            Profit sensitivity — at current bid of {fmtPrimary(currentHammerGbp)} · private sale exit
           </p>
           <div className="overflow-x-auto -mx-1">
             <table className="w-full border-collapse text-[0.65rem] font-mono">
@@ -267,7 +363,7 @@ export function BidCalculator({
                       </td>
                       {RESALE_COLS.map((col) => {
                         const adjRepair = repairEstimateGbp * row.mult;
-                        const adjResale = resaleCeilingGbp * col.mult;
+                        const adjResale = retailCeiling * col.mult;
                         const totalCost = currentHammerGbp + nonRepair + adjRepair;
                         const margin = adjResale - totalCost;
                         const pct = Math.round((margin / adjResale) * 100);
@@ -287,7 +383,7 @@ export function BidCalculator({
               </tbody>
             </table>
           </div>
-          <p className="mt-2 font-mono text-[0.6rem] text-[var(--text-muted)]">
+          <p className="mt-2 font-mono text-[0.58rem] text-[var(--text-muted)]">
             Green ≥15% · Amber ≥5% · Orange ≥0% · Red = loss
           </p>
         </div>
