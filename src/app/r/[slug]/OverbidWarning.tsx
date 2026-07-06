@@ -2,7 +2,7 @@
 
 import { useContext } from 'react';
 import { ReportAdjustmentContext } from './ReportAdjustmentContext';
-import type { VehicleCategory } from '@/lib/resale-model';
+import type { VehicleCategory } from '@/lib/resale-model/vehicle';
 
 const WHOLESALE_RATIO: Record<VehicleCategory, number> = {
   car: 0.78,

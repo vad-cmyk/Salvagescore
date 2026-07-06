@@ -18,7 +18,7 @@ import { VerdictBadge } from './VerdictBadge';
 import { ConditionAdjuster } from './ConditionAdjuster';
 import { computeDealScore } from '@/lib/deal-score';
 import { buildDefaultToggles, computeMileagePenalty } from '@/lib/resale-model/condition-adjustments';
-import { categorise } from '@/lib/resale-model';
+import { categorise } from '@/lib/resale-model/vehicle';
 
 export const revalidate = 0;
 

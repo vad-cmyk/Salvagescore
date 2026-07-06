@@ -2,7 +2,7 @@
 
 import { useState, useContext } from 'react';
 import { ReportAdjustmentContext } from './ReportAdjustmentContext';
-import type { VehicleCategory } from '@/lib/resale-model';
+import type { VehicleCategory } from '@/lib/resale-model/vehicle';
 
 type Props = {
   resaleCeilingGbp: number;

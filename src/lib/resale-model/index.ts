@@ -1,6 +1,8 @@
 import type { Listing, ResaleEstimate } from '@/types';
 import { LHD_PENALTIES, TITLE_PENALTIES, ACCIDENT_PENALTY } from '@/lib/cost-model/defaults';
 import { fetchAutotraderMedian } from './autotrader';
+export type { VehicleCategory } from './vehicle';
+export { categorise } from './vehicle';
 
 /**
  * Fallback UK resale base values (GBP) for common Copart imports.
@@ -42,18 +44,6 @@ const BASE_VALUES: Record<string, number> = {
 
 const DEFAULT_BASE = 15000;
 
-export type VehicleCategory = 'car' | 'truck_suv' | 'van';
-
-export function categorise(listing: Listing): VehicleCategory {
-  const m = listing.model.toLowerCase();
-  const truckKeywords = [
-    'f-150', 'f-250', 'f-350', 'silverado', 'ram', 'tundra', 'tahoe',
-    'suburban', 'yukon', 'expedition', 'navigator', 'wrangler', 'cherokee',
-    'explorer', 'bronco', 'escalade', 'sierra', 'canyon', 'tacoma', 'ranger',
-  ];
-  if (truckKeywords.some((k) => m.includes(k))) return 'truck_suv';
-  return 'car';
-}
 
 function lookupFallback(listing: Listing): number {
   const key = `${listing.make} ${listing.model}`.toLowerCase();
