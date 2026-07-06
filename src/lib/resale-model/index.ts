@@ -1,6 +1,7 @@
 import type { Listing, ResaleEstimate } from '@/types';
 import { LHD_PENALTIES, TITLE_PENALTIES, ACCIDENT_PENALTY } from '@/lib/cost-model/defaults';
 import { fetchAutotraderMedian } from './autotrader';
+import type { VehicleCategory } from './vehicle';
 export type { VehicleCategory } from './vehicle';
 export { categorise } from './vehicle';
 
