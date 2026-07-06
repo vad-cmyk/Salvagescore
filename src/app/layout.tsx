@@ -50,8 +50,10 @@ export default async function RootLayout({
         />
       </head>
       <body className="bg-[#0A0B0E] text-[#F0EDE8] antialiased min-h-screen">
-        <header className="no-print fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-end">
-          <NavAuth user={user} />
+        <header className="no-print fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-end pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-3">
+            <NavAuth user={user} />
+          </div>
         </header>
         {children}
       </body>
