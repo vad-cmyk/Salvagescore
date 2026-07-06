@@ -1,21 +1,33 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 
+const VERDICT_COLOR = '#EAB308';
+
 const DEMO = {
-  url: 'copart.co.uk/lot/43872610',
-  vehicle: '2020 VW Golf TDI',
-  badge: 'Cat N · Copart UK',
-  photoColors: ['#F97316', '#EAB308', '#EF4444', '#22C55E', '#F97316', '#EAB308', '#22C55E', '#22C55E'] as string[],
-  damageSummary: 'Front bumper · Right wing · Rear panel — identified',
+  url: 'copart.co.uk/lot/56557906',
+  vehicle: '2020 Land Rover Range Rover Sport',
+  badge: 'Cat S · Copart UK · Lot 56557906',
+  photos: [
+    'https://cs.copart.com/v1/AUTH_svc.pdoc00001/ids-c-prod-lpp/0626/4f39da6172ec473f88f5c2613f410734_thb.jpg',
+    'https://cs.copart.com/v1/AUTH_svc.pdoc00001/ids-c-prod-lpp/0626/4f084de238704889952dffac89e054b3_thb.jpg',
+    'https://cs.copart.com/v1/AUTH_svc.pdoc00001/ids-c-prod-lpp/0626/da72dced76ab4e3fbcde7fc03477c424_thb.jpg',
+    'https://cs.copart.com/v1/AUTH_svc.pdoc00001/ids-c-prod-lpp/0626/5591c26123204a838de5f1edf029f16f_thb.jpg',
+    'https://cs.copart.com/v1/AUTH_svc.pdoc00001/ids-c-prod-lpp/0626/421f68281f8e48da877b96391bb4d02f_thb.jpg',
+    'https://cs.copart.com/v1/AUTH_svc.pdoc00001/ids-c-prod-lpp/0626/08539e088834499bbe4230e769007ac0_thb.jpg',
+    'https://cs.copart.com/v1/AUTH_svc.pdoc00001/ids-c-prod-lpp/0626/e250a20dd41440b8aecc6fa0174d606c_thb.jpg',
+    'https://cs.copart.com/v1/AUTH_svc.pdoc00001/ids-c-prod-lpp/0626/e1192771817f438794d582dfb684be80_thb.jpg',
+  ] as string[],
+  photoFindings: ['STRUCT', 'PANEL', 'MECH', 'PANEL', 'COSMETIC', 'MECH', 'NONE', 'PANEL'] as string[],
+  damageSummary: 'Front end structural · Undercarriage · Right side — 23 photos scanned',
   costs: [
-    { l: 'Hammer price', v: '£3,200' },
-    { l: 'Buyer fee (~12%)', v: '£380' },
-    { l: 'Repair estimate', v: '£1,620' },
+    { l: 'Hammer price', v: '£11,500' },
+    { l: 'Buyer fee (~12%)', v: '£1,380' },
+    { l: 'Repair estimate', v: '£5,800' },
   ],
-  total: '£5,200',
-  resale: '£9,375',
-  margin: '+£4,175 (45%)',
-  score: 71,
+  total: '£18,680',
+  resale: '£27,200',
+  margin: '+£8,520 (46%)',
+  score: 67,
 };
 
 export function ReportDemo({ enabled = true }: { enabled?: boolean }) {
@@ -61,7 +73,7 @@ export function ReportDemo({ enabled = true }: { enabled?: boolean }) {
     setPhase(0); setPhotoCount(0); setCostCount(0); setScore(0); setShowVerdict(false);
 
     if (reduced) {
-      setPhase(6); setPhotoCount(8); setCostCount(3); setScore(71); setShowVerdict(true);
+      setPhase(6); setPhotoCount(8); setCostCount(3); setScore(DEMO.score); setShowVerdict(true);
       return;
     }
 
@@ -83,7 +95,7 @@ export function ReportDemo({ enabled = true }: { enabled?: boolean }) {
         const elapsed = Date.now() - start;
         const t = Math.min(elapsed / 1200, 1);
         const ease = 1 - Math.pow(1 - t, 3);
-        setScore(Math.round(71 * ease));
+        setScore(Math.round(DEMO.score * ease));
         if (t < 1) requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
@@ -178,22 +190,38 @@ export function ReportDemo({ enabled = true }: { enabled?: boolean }) {
           {/* Photos */}
           {phase >= 4 && (
             <div className="mb-5 animate-fade-up">
-              <p className="font-mono text-[0.55rem] text-[var(--text-muted)] uppercase tracking-[0.18em] mb-2">Damage photos</p>
+              <p className="font-mono text-[0.55rem] text-[var(--text-muted)] uppercase tracking-[0.18em] mb-2">Damage photos — 23 scanned</p>
               <div className="grid grid-cols-8 gap-1.5">
-                {DEMO.photoColors.map((color, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-sm border border-[var(--border)] flex items-center justify-center"
-                    style={{
-                      background: 'var(--bg)',
-                      opacity: i < photoCount ? 1 : 0,
-                      transform: i < photoCount ? 'scale(1)' : 'scale(0.6)',
-                      transition: 'opacity 0.22s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1)',
-                    }}
-                  >
-                    <div className="w-2 h-2 rounded-full" style={{ background: color, opacity: 0.9 }} />
-                  </div>
-                ))}
+                {DEMO.photos.map((src, i) => {
+                  const finding = DEMO.photoFindings[i];
+                  const findingColor =
+                    finding === 'STRUCT'   ? '#EF4444' :
+                    finding === 'MECH'     ? '#F97316' :
+                    finding === 'PANEL'    ? '#EAB308' :
+                    finding === 'COSMETIC' ? '#22C55E' : '#4A4F64';
+                  return (
+                    <div
+                      key={i}
+                      className="aspect-square rounded-sm border border-[var(--border)] overflow-hidden relative"
+                      style={{
+                        opacity: i < photoCount ? 1 : 0,
+                        transform: i < photoCount ? 'scale(1)' : 'scale(0.6)',
+                        transition: 'opacity 0.22s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1)',
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt="" className="w-full h-full object-cover" />
+                      {i < photoCount && (
+                        <div
+                          className="absolute bottom-0 left-0 right-0 px-0.5 py-0.5 font-mono text-[0.42rem] font-[700] text-center leading-none"
+                          style={{ background: findingColor + '99', color: '#fff' }}
+                        >
+                          {finding}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
               {photoCount === 8 && (
                 <p className="font-mono text-[0.55rem] text-[var(--text-muted)] mt-2 animate-fade-up">
@@ -233,7 +261,7 @@ export function ReportDemo({ enabled = true }: { enabled?: boolean }) {
                   <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
                   <circle
                     cx="40" cy="40" r="32" fill="none"
-                    stroke="#22C55E" strokeWidth="8"
+                    stroke={VERDICT_COLOR} strokeWidth="8"
                     strokeDasharray={`${(score / 100) * CIRCUM} ${CIRCUM}`}
                     strokeLinecap="round"
                   />
@@ -251,22 +279,26 @@ export function ReportDemo({ enabled = true }: { enabled?: boolean }) {
                 </div>
                 <div className="flex justify-between">
                   <span className="font-mono text-[0.65rem] text-[var(--text-muted)]">Margin</span>
-                  <span className="font-mono text-[0.65rem] text-[#22C55E]">{DEMO.margin}</span>
+                  <span className="font-mono text-[0.65rem]" style={{ color: VERDICT_COLOR }}>{DEMO.margin}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-mono text-[0.65rem] text-[var(--text-muted)]">Deal score</span>
-                  <span className="font-mono text-[0.65rem] text-[#22C55E]">{score}/100</span>
+                  <span className="font-mono text-[0.65rem]" style={{ color: VERDICT_COLOR }}>{score}/100</span>
                 </div>
               </div>
 
               {/* Verdict badge */}
               {showVerdict && (
                 <div
-                  className="shrink-0 border border-[#22C55E]/40 bg-[rgba(34,197,94,0.08)] rounded-xl px-5 py-3 text-center"
-                  style={{ animation: 'fade-up 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards' }}
+                  className="shrink-0 rounded-xl px-5 py-3 text-center"
+                  style={{
+                    border: `1px solid ${VERDICT_COLOR}40`,
+                    background: `${VERDICT_COLOR}14`,
+                    animation: 'fade-up 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards',
+                  }}
                 >
-                  <p className="font-display font-[800] text-2xl tracking-[0.1em] text-[#22C55E]">PASS</p>
-                  <p className="font-mono text-[0.5rem] text-[#22C55E]/60 mt-0.5 uppercase tracking-wider">Verdict</p>
+                  <p className="font-display font-[800] text-2xl tracking-[0.1em]" style={{ color: VERDICT_COLOR }}>CAUTION</p>
+                  <p className="font-mono text-[0.5rem] mt-0.5 uppercase tracking-wider" style={{ color: VERDICT_COLOR + '99' }}>Verdict</p>
                 </div>
               )}
             </div>

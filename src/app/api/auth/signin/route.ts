@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const origin = req.headers.get('origin') ?? `https://${req.headers.get('host')}`;
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? req.headers.get('origin') ?? `https://${req.headers.get('host')}`;
   const callbackUrl = new URL('/auth/callback', origin);
   if (next) callbackUrl.searchParams.set('next', next);
 

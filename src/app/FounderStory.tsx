@@ -26,13 +26,13 @@ export function FounderStory({ enabled = true }: { enabled?: boolean }) {
         <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-10 items-start">
           {/* Photo column */}
           <div className="shrink-0">
-            <div className="w-[160px] aspect-square rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] flex flex-col items-center justify-center gap-2">
-              <div className="w-14 h-14 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] flex items-center justify-center">
-                <span className="font-display font-[700] text-2xl text-[var(--text-muted)]">V</span>
-              </div>
-              <span className="font-mono text-[0.55rem] text-[var(--text-muted)] px-3 text-center leading-snug">
-                Photo coming soon
-              </span>
+            <div className="w-[160px] aspect-square rounded-2xl border border-[var(--border)] overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/vadim.jpg"
+                alt="Vadim, Founder of SalvageScore"
+                className="w-full h-full object-cover object-top"
+              />
             </div>
             <p className="font-display font-[700] text-base mt-4 text-[var(--text-primary)]">Vadim</p>
             <p className="font-mono text-[0.65rem] text-[var(--text-muted)] mt-0.5">Founder · SalvageScore</p>

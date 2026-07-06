@@ -273,6 +273,10 @@ const FAQ: { q: string; a: string }[] = [
     a: 'Copart US, Copart UK, and A Better Bid (which covers IAAI listings too). If your lot is on any of those three, paste the URL and it will work.',
   },
   {
+    q: 'How is this different from US auction calculators?',
+    a: 'Most auction tools are built for the US market only — US fees, US pricing, US dollars. SalvageScore is the only one built for UK Cat N/S buyers and for importing salvage cars from the US to the UK, with full duty, VAT, IVA, DVLA and left-hand-drive resale maths in pounds. We also support US domestic buying. If you\'re in the UK or importing here, that difference is the whole point.',
+  },
+  {
     q: 'How accurate are the repair cost estimates?',
     a: 'Estimates are panel-level using real labour and parts benchmarks, weighted by damage severity and a make-specific multiplier (a BMW costs more to repair than a Ford). They are guides — always get independent bodyshop quotes before bidding.',
   },
@@ -393,7 +397,7 @@ export function HomeMarketingSections() {
               Should you buy it?
             </h1>
             <p className="font-mono text-[0.9rem] text-[var(--text-secondary)] leading-[1.8] mb-8">
-              Paste a Copart UK, Copart US, or A Better Bid lot URL. AI scans the damage photos, models every cost, and gives you a full go&nbsp;/&nbsp;no-go report in about 90 seconds — for UK Cat&nbsp;N/S buyers, UK importers, and US domestic buyers alike.
+              Paste a Copart UK, Copart US, or A Better Bid lot. AI scans the damage, models every cost, and gives you a go&nbsp;/&nbsp;no-go verdict in about 90 seconds — the only tool built for UK Cat&nbsp;N/S buyers and US-to-UK importers, with US domestic supported too.
             </p>
             <a
               href="/check"
@@ -404,6 +408,13 @@ export function HomeMarketingSections() {
                 <path d="M4 9h10M10 5l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </a>
+            <div className="flex flex-wrap gap-2 mt-5">
+              {(['🇬🇧 UK Cat N/S buyers', '🌍 US-to-UK importers', '🇺🇸 US domestic buyers'] as const).map((label) => (
+                <span key={label} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--bg-surface)] font-mono text-[0.7rem] text-[var(--text-muted)]">
+                  {label}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Landscape iPhone frame — full width */}
@@ -477,6 +488,51 @@ export function HomeMarketingSections() {
             {FEATURES.map((f) => (
               <FeatureCard key={f.title} feature={f} />
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why SalvageScore is different */}
+      <section className="max-w-6xl mx-auto px-6 pb-24">
+        <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] overflow-hidden">
+          {/* Amber left accent bar */}
+          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--amber)]" />
+          {/* Ambient glow */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_0%_50%,rgba(217,119,6,0.04),transparent)] pointer-events-none" />
+
+          <div className="relative p-8 md:p-12 pl-10 md:pl-14">
+            <p className="font-mono text-xs text-[var(--amber)] uppercase tracking-[0.2em] mb-4">Why it&apos;s different</p>
+            <h2 className="font-display font-[800] text-[clamp(1.6rem,4vw,2.4rem)] leading-tight tracking-[-0.01em] mb-6">
+              Built in the UK, for the way Britain buys salvage.
+            </h2>
+            <div className="max-w-2xl space-y-4 font-mono text-[0.8rem] text-[var(--text-muted)] leading-[1.8]">
+              <p>
+                Most auction tools are US-only. SalvageScore is built from the ground up for UK reality — Cat N and Cat S categories, Copart UK fees, import duty and VAT, IVA and DVLA costs, the left-hand-drive resale hit, and real UK market comps in pounds.
+              </p>
+              <p>
+                Whether you&apos;re rebuilding a Cat N locally or importing a salvage car from the US, you get the true number — not a US estimate that doesn&apos;t apply here.
+              </p>
+              <p className="text-[var(--text-secondary)]">
+                And if you&apos;re buying US domestic, that&apos;s covered too.
+              </p>
+            </div>
+
+            {/* Feature pills */}
+            <div className="flex flex-wrap gap-2 mt-8">
+              {[
+                'Cat N / Cat S categories',
+                'Copart UK fees',
+                'Import duty + VAT',
+                'IVA & DVLA costs',
+                'LHD resale penalty',
+                'AutoTrader & CAP comps in £',
+              ].map((item) => (
+                <span key={item} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--border)] font-mono text-[0.65rem] text-[var(--text-muted)]">
+                  <span className="w-1 h-1 rounded-full bg-[var(--amber)] shrink-0" />
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
