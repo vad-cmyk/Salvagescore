@@ -87,6 +87,9 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
 
   const dealScore = computeDealScore(marginPct, damage, resale.confidence);
   const isNonRunner = damage.criticalFlags.nonRunner === true;
+  // Copart UK only: driveStatus===undefined means Copart did not verify run condition
+  const isRunConditionUnconfirmed =
+    listing.source === 'copart-uk' && listing.driveStatus === undefined && !isNonRunner;
 
   // Condition adjuster setup
   const mileagePenalty = computeMileagePenalty(listing.odometerMiles);
@@ -273,6 +276,20 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                 </>
               )}
             </div>
+          </div>
+        )}
+
+        {/* UNCONFIRMED RUN CONDITION warning (Copart UK only, not a confirmed non-runner) */}
+        {isRunConditionUnconfirmed && (
+          <div className="animate-fade-up stagger-2 mt-3 rounded-xl border border-[#D97706]/40 bg-[rgba(217,119,6,0.06)] px-4 py-3 flex items-start gap-3">
+            <svg className="shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="6" stroke="#D97706" strokeWidth="1.3"/>
+              <path d="M7 4.5v3M7 9v.5" stroke="#D97706" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+            <p className="font-mono text-[0.72rem] text-[var(--text-secondary)] leading-[1.65]">
+              <span className="font-[600] text-[#D97706]">Run condition unconfirmed.</span>{' '}
+              Copart UK has not verified whether this vehicle starts or drives. Treat it as a potential non-runner until confirmed at viewing. A pre-purchase diagnostic inspection is strongly recommended before bidding.
+            </p>
           </div>
         )}
 

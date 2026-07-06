@@ -116,7 +116,6 @@ export async function analyzeMechanicalFailure(listing: Listing): Promise<Mechan
 }
 
 const NON_RUNNER_PATTERNS = [
-  'mechanical',
   'non-runner',
   'non runner',
   'not run',
@@ -135,9 +134,11 @@ const NON_RUNNER_PATTERNS = [
 
 /** Detect whether a listing is a non-runner from the damage/title text or driveStatus flag. */
 export function detectNonRunner(listing: Listing): boolean {
-  // Copart UK sets driveStatus=false when the vehicle cannot start or be driven
+  // Copart UK explicitly confirmed the car runs — trust it over any text patterns
+  if (listing.driveStatus === true) return false;
+  // Copart UK explicitly confirmed it does not start / cannot be driven
   if (listing.driveStatus === false) return true;
-
+  // driveStatus undefined = unconfirmed; fall back to damage-text heuristic
   const text = [
     listing.primaryDamage,
     listing.secondaryDamage ?? '',

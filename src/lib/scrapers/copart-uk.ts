@@ -181,7 +181,8 @@ export async function scrapeListing(url: string): Promise<Listing> {
       photos,
       location: lot.yn || 'UK',
       auctionDate: lot.sad ? new Date(lot.sad).toISOString() : undefined,
-      driveStatus: isImmobile ? false : true,
+      // true = Copart confirmed runs & drives; false = confirmed non-runner; undefined = unconfirmed
+      driveStatus: isImmobile ? false : lot.driveStatus === true ? true : undefined,
       engineStarts: engineStartsConfirmed ? true : undefined,
     };
   } finally {
